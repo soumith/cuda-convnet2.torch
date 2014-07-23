@@ -23,47 +23,47 @@
 
 enum FILTER_OUTPUT_ORDER {MODULE_FILTER_IMAGE, FILTER_MODULE_IMAGE};
 
-void convFilterActs(NVMatrix& images, NVMatrix& filters, NVMatrix& targets,
+void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                     int numImgColors, int numGroups);
-void convFilterActs(NVMatrix& images, NVMatrix& filters, NVMatrix& targets,
+void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                    int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                    int numImgColors, int numGroups,
                    float scaleTargets, float scaleOutput);
 
-void localFilterActs(NVMatrix& images, NVMatrix& filters, NVMatrix& targets,
+void localFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups);
-void localFilterActs(NVMatrix& images, NVMatrix& filters, NVMatrix& targets,
+void localFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups,
                      float scaleTargets, float scaleOutput);
 
-void convImgActs(NVMatrix& hidActs, NVMatrix& filters, NVMatrix& targets,
+void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void convImgActs(NVMatrix& hidActs, NVMatrix& filters, NVMatrix& targets,
+void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                  float scaleTargets, float scaleOutput);
 
-void localImgActs(NVMatrix& hidActs, NVMatrix& filters, NVMatrix& targets,
+void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void localImgActs(NVMatrix& hidActs, NVMatrix& filters, NVMatrix& targets,
+void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                   float scaleTargets, float scaleOutput);
 
-void convWeightActs(NVMatrix& images, NVMatrix& hidActs, NVMatrix& targets,
+void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                     int moduleStride, int numImgColors, int numGroups, int sumWidth);
-void convWeightActs(NVMatrix& images, NVMatrix& hidActs, NVMatrix& targets,
+void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                     int numImgColors, int numGroups, int sumWidth,
                     float scaleTargets, float scaleOutput);
 
-void localWeightActs(NVMatrix& images, NVMatrix& hidActs, NVMatrix& targets,
+void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                      int moduleStride, int numImgColors, int numGroups);
 
-void localWeightActs(NVMatrix& images, NVMatrix& hidActs, NVMatrix& targets,
+void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups, float scaleTargets, float scaleOutput);
 
