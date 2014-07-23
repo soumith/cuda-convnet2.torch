@@ -24,5 +24,6 @@ NVMatrix to THTensor cheatsheet
 
 * check contiguity of all tensors, if not, make contiguous
 * ignore/remove assertions (because you are doing contiguous checks anyways)
-
+* harmonize getTextureObject
+* double-check places where strides are allowed (especially conv)
 Agg = ?, Agg.getBaseValue, Agg.output(.., ..)
