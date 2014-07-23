@@ -11,6 +11,7 @@ NVMatrix to THTensor cheatsheet
 | --------------------|:-------------:|
 | .getNumCols()       | .size[0]
 | .getNumRows()       | .size[1]
+| .getNumElements()   | THCudaTensor_nElement()
 | .getNumDataBytes()  | THCudaTensor_nElement() * 4
 | .getStride()        | .stride[0] 
 | .isTrans()          | N/A
