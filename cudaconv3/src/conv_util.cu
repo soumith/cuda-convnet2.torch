@@ -72,13 +72,13 @@ __global__ void kReflectH(float * imgs, float * targets,
  * targets: (numColors, imgSize, imgSize, numCases)
  */
 void convReflectHorizontal(NVMatrix& images, NVMatrix& targets, int imgSize) {
-    int numCases = images.getNumCols(); 
+    int numCases = images.size[0]; 
     int imgPixels = imgSize * imgSize;
-    int numColors = images.getNumRows() / imgPixels;
-    assert(numColors * imgPixels == images.getNumRows());
+    int numColors = images.size[1] / imgPixels;
+    assert(numColors * imgPixels == images.size[1]);
     assert(numColors > 0 && numColors <= 3);
     
-    targets.resize(images);
+    THCudaTensor_resizeAs(targets, images);
     int imgsPerThread = numCases % 128 == 0 ? 4 : numCases % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numCases % (32 * imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -87,70 +87,70 @@ void convReflectHorizontal(NVMatrix& images, NVMatrix& targets, int imgSize) {
         if (numColors == 1) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<1, 1, true>, cudaFuncCachePreferL1);
-                kReflectH<1, 1, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<1, 2, true>, cudaFuncCachePreferL1);
-                kReflectH<1, 2, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<1, 4, true>, cudaFuncCachePreferL1);
-                kReflectH<1, 4, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         } else if (numColors == 2) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<2, 1, true>, cudaFuncCachePreferL1);
-                kReflectH<2, 1, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<2, 2, true>, cudaFuncCachePreferL1);
-                kReflectH<2, 2, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<2, 4, true>, cudaFuncCachePreferL1);
-                kReflectH<2, 4, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         } else if (numColors == 3) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<3, 1, true>, cudaFuncCachePreferL1);
-                kReflectH<3, 1, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<3, 2, true>, cudaFuncCachePreferL1);
-                kReflectH<3, 2, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<3, 4, true>, cudaFuncCachePreferL1);
-                kReflectH<3, 4, true><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         }
     } else {
         if (numColors == 1) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<1, 1, false>, cudaFuncCachePreferL1);
-                kReflectH<1, 1, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<1, 2, false>, cudaFuncCachePreferL1);
-                kReflectH<1, 2, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<1, 4, false>, cudaFuncCachePreferL1);
-                kReflectH<1, 4, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<1, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         } else if (numColors == 2) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<2, 1, false>, cudaFuncCachePreferL1);
-                kReflectH<2, 1, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<2, 2, false>, cudaFuncCachePreferL1);
-                kReflectH<2, 2, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<2, 4, false>, cudaFuncCachePreferL1);
-                kReflectH<2, 4, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<2, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         } else if (numColors == 3) {
             if (imgsPerThread == 1) {
                 cudaFuncSetCacheConfig(kReflectH<3, 1, false>, cudaFuncCachePreferL1);
-                kReflectH<3, 1, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 2) {
                 cudaFuncSetCacheConfig(kReflectH<3, 2, false>, cudaFuncCachePreferL1);
-                kReflectH<3, 2, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             } else if (imgsPerThread == 4) {
                 cudaFuncSetCacheConfig(kReflectH<3, 4, false>, cudaFuncCachePreferL1);
-                kReflectH<3, 4, false><<<blocks, threads, 0>>>(images.getDevData(), targets.getDevData(), imgSize, numCases);
+                kReflectH<3, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(targets), imgSize, numCases);
             }
         }
     }
@@ -202,12 +202,11 @@ __global__ void kNormalizeLCWeights(float* weights, const uint numFilters, const
  * weights: (numModules, numColors, filterPixels, numFilters)
  */
 void normalizeLocalWeights(NVMatrix& weights, int numModules, float norm) {
-    int numFilters = weights.getNumCols();
-    int weightsPerFilter = weights.getNumRows() / numModules;
-    assert(numModules * weightsPerFilter == weights.getNumRows());
+    int numFilters = weights.size[0];
+    int weightsPerFilter = weights.size[1] / numModules;
+    assert(numModules * weightsPerFilter == weights.size[1]);
     
-    assert(!weights.isTrans());
-    assert(weights.isContiguous());
+    assert(THCudaTensor_isContiguous(weights));
     assert(numFilters % 16 == 0);
     
     int bx = numFilters % 32 == 0 ? 32 : 16;
@@ -218,17 +217,17 @@ void normalizeLocalWeights(NVMatrix& weights, int numModules, float norm) {
     dim3 threads(bx, by);
     if (filtersPerThread == 4) {
         cudaFuncSetCacheConfig(kNormalizeLCWeights<4, 32, 4>, cudaFuncCachePreferL1);
-        kNormalizeLCWeights<4, 32, 4><<<blocks, threads, 0>>>(weights.getDevData(), numFilters, numModules, weightsPerFilter, norm);
+        kNormalizeLCWeights<4, 32, 4><<<blocks, threads, 0>>>(THCudaTensor_data(weights), numFilters, numModules, weightsPerFilter, norm);
     } else if (filtersPerThread == 2) {
         cudaFuncSetCacheConfig(kNormalizeLCWeights<4, 32, 2>, cudaFuncCachePreferL1);
-        kNormalizeLCWeights<4, 32, 2><<<blocks, threads, 0>>>(weights.getDevData(), numFilters, numModules, weightsPerFilter, norm);
+        kNormalizeLCWeights<4, 32, 2><<<blocks, threads, 0>>>(THCudaTensor_data(weights), numFilters, numModules, weightsPerFilter, norm);
     } else {
         if (numFilters % 32 == 0) {
             cudaFuncSetCacheConfig(kNormalizeLCWeights<4, 32, 1>, cudaFuncCachePreferL1);
-            kNormalizeLCWeights<4, 32, 1><<<blocks, threads, 0>>>(weights.getDevData(), numFilters, numModules, weightsPerFilter, norm);
+            kNormalizeLCWeights<4, 32, 1><<<blocks, threads, 0>>>(THCudaTensor_data(weights), numFilters, numModules, weightsPerFilter, norm);
         } else {
             cudaFuncSetCacheConfig(kNormalizeLCWeights<8, 16, 1>, cudaFuncCachePreferL1);
-            kNormalizeLCWeights<8, 16, 1><<<blocks, threads, 0>>>(weights.getDevData(), numFilters, numModules, weightsPerFilter, norm);
+            kNormalizeLCWeights<8, 16, 1><<<blocks, threads, 0>>>(THCudaTensor_data(weights), numFilters, numModules, weightsPerFilter, norm);
         }
     }
 }
@@ -661,37 +660,35 @@ __global__ void kBedOfNails(float* imgs, float* target, const int imgSize, const
  */
 void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int imgSize, int startX, int strideX,
                      bool reverse, float scaleTargets, float scaleOutput) {
-    int numImages = reverse ? target.getNumCols() : images.getNumCols();
+    int numImages = reverse ? target.size[0] : images.size[0];
     int imgPixels = imgSize * imgSize;
 
-    assert(!images.isTrans());
-    assert(!target.isTrans());
-    assert(images.isContiguous());
-    assert(target.isContiguous());
+    assert(THCudaTensor_isContiguous(images));
+    assert(THCudaTensor_isContiguous(target));
     assert(strideX > 1);
     
     int outputsX = DIVUP(imgSize, strideX);
     int outputs = outputsX * outputsX;
     if (reverse) {
-        assert(target.getNumRows() == numChannels * outputs);
+        assert(target.size[1] == numChannels * outputs);
     } else  {
-        assert(images.getNumRows() == numChannels * imgPixels);
+        assert(images.size[1] == numChannels * imgPixels);
     }
     
     if (scaleTargets == 0) {
         if (reverse) {
-            images.resize(numChannels * imgPixels, numImages);
-            images.apply(NVMatrixOps::Zero());
+          THCudaTensor_resize2d(images, numChannels * imgPixels, numImages);
+          THCudaTensor_fill(images, 0);
         } else {
-            target.resize(numChannels*outputs, numImages);
+          THCudaTensor_resize2d(target, numChannels*outputs, numImages);
         }
     } else {
         if (reverse) {
-            assert(images.getNumRows() == numChannels * outputs);
-            assert(images.getNumCols() == numImages);
+            assert(images.size[1] == numChannels * outputs);
+            assert(images.size[0] == numImages);
         } else {
-            assert(target.getNumRows() == numChannels * outputs);
-            assert(target.getNumCols() == numImages);
+            assert(target.size[1] == numChannels * outputs);
+            assert(target.size[0] == numImages);
         }
     }
     
@@ -705,24 +702,24 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
         if (chansPerThread == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 4, 1, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 4, 1, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 4, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 4, 1, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 4, 1, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 4, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 4, 2, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 4, 2, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 4, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 4, 2, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 4, 2, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 4, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
@@ -731,24 +728,24 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
         if (chansPerThread == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 2, 1, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 2, 1, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 2, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 2, 1, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 2, 1, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 2, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 2, 2, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 2, 2, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 2, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 2, 2, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 2, 2, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 2, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
@@ -757,24 +754,24 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
         if (chansPerThread == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 1, 1, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 1, 1, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 1, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 1, 1, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 1, 1, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 1, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 1, 2, true>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 1, 2, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 1, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                     imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                     reverse, scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kBedOfNails<4, 32, 1, 2, false>, cudaFuncCachePreferL1);
-                kBedOfNails<4, 32, 1, 2, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(),
+                kBedOfNails<4, 32, 1, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                                      imgSize, numChannels, numImages, startX, strideX, outputsX,
                                                                      reverse, scaleTargets, scaleOutput);
             }
@@ -801,22 +798,19 @@ void convBedOfNailsUndo(NVMatrix& actsGrad, NVMatrix& target, int numChannels, i
  */
 void convGaussianBlur(NVMatrix& images, NVMatrix& filter, NVMatrix& target, bool horiz, int numChannels,
                       float scaleTargets, float scaleOutputs) {
-    int numImages = images.getNumCols();
-    int radius = filter.getNumCols() / 2;
-    int imgPixels = images.getNumRows() / numChannels;
+    int numImages = images.size[0];
+    int radius = filter.size[0] / 2;
+    int imgPixels = images.size[1] / numChannels;
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgPixels == imgSize * imgSize);
     assert(radius >= 1 && radius <= 4);
     assert(imgSize >= 2 * radius + 1);
-    assert(filter.getNumRows() == 1);
-    assert(images.getNumRows() == numChannels * imgPixels);
-    assert(!images.isTrans());
-    assert(!filter.isTrans());
-    assert(!target.isTrans());
-    assert(target.isContiguous());
+    assert(filter.size[1] == 1);
+    assert(images.size[1] == numChannels * imgPixels);
+    assert(THCudaTensor_isContiguous(target));
     if (scaleTargets == 0) {
-        target.resize(images);
+      THCudaTensor_resizeAs(target, images);
     } else {
         assert(target.isSameDims(images));
     }
@@ -825,22 +819,22 @@ void convGaussianBlur(NVMatrix& images, NVMatrix& filter, NVMatrix& target, bool
     dim3 blocks(DIVUP(numImages, threads.x), DIVUP(numChannels*imgSize, threads.y));
     if (radius == 1) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 1>, cudaFuncCachePreferL1);
-        kGaussianBlur<4, 32, 1><<<blocks, threads, 0>>>(images.getDevData(), filter.getDevData(), target.getDevData(),
-                                                           imgSize, numImages, images.getStride(), horiz, scaleTargets, scaleOutputs);
+        kGaussianBlur<4, 32, 1><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
+                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
 
     } else if (radius == 2) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 2>, cudaFuncCachePreferL1);
-        kGaussianBlur<4, 32, 2><<<blocks, threads, 0>>>(images.getDevData(), filter.getDevData(), target.getDevData(),
-                                                           imgSize, numImages, images.getStride(), horiz, scaleTargets, scaleOutputs);
+        kGaussianBlur<4, 32, 2><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
+                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
 
     } else if (radius == 3) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 3>, cudaFuncCachePreferL1);
-        kGaussianBlur<4, 32, 3><<<blocks, threads, 0>>>(images.getDevData(), filter.getDevData(), target.getDevData(),
-                                                           imgSize, numImages, images.getStride(), horiz, scaleTargets, scaleOutputs);
+        kGaussianBlur<4, 32, 3><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
+                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
     } else if (radius == 4) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 4>, cudaFuncCachePreferL1);
-        kGaussianBlur<4, 32, 4><<<blocks, threads, 0>>>(images.getDevData(), filter.getDevData(), target.getDevData(),
-                                                           imgSize, numImages, images.getStride(), horiz, scaleTargets, scaleOutputs);
+        kGaussianBlur<4, 32, 4><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
+                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
     }
 }
 
@@ -1300,24 +1294,20 @@ __global__ void kCrossMapMaxPoolUndo(float* imgs, float* maxGrads, float* maxAct
 void convCrossMapMaxPoolUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, NVMatrix& target,
                              const int imgSize, const int startF, const int poolSize,
                              const int stride, const float scaleTargets, const float scaleOutputs) {
-    int numImages = images.getNumCols();
+    int numImages = images.size[0];
     int imgPixels = imgSize * imgSize;
-    int numFilters = images.getNumRows() / imgPixels;
-    int numOutputs = maxActs.getNumRows() / imgPixels;
-    assert(images.getNumRows() == numFilters * imgPixels);
-    assert(maxGrads.getNumRows() == numOutputs * imgPixels);
-    assert(maxGrads.getNumCols() == numImages);
+    int numFilters = images.size[1] / imgPixels;
+    int numOutputs = maxActs.size[1] / imgPixels;
+    assert(images.size[1] == numFilters * imgPixels);
+    assert(maxGrads.size[1] == numOutputs * imgPixels);
+    assert(maxGrads.size[0] == numImages);
     assert(maxGrads.isSameDims(maxActs));
 
-    assert(images.getNumRows() == numFilters * imgPixels);
+    assert(images.size[1] == numFilters * imgPixels);
 
-    assert(!images.isTrans());
-    assert(!target.isTrans());
-    assert(!maxGrads.isTrans());
-    assert(!maxActs.isTrans());
-    assert(images.isContiguous());
-    assert(maxGrads.isContiguous());
-    assert(maxActs.isContiguous());
+    assert(THCudaTensor_isContiguous(images));
+    assert(THCudaTensor_isContiguous(maxGrads));
+    assert(THCudaTensor_isContiguous(maxActs));
     assert(maxGrads.isSameDims(maxActs));
 //    assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
@@ -1333,23 +1323,23 @@ void convCrossMapMaxPoolUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& max
     bool checkCaseBounds = numImages % (threads.x*imgsPerThread) != 0;
 
     if (scaleTargets == 0) {
-        target.resize(images);
+      THCudaTensor_resizeAs(target, images);
         if (!checkCaseBounds) {
             if (imgsPerThread == 4) {
-                kCrossMapMaxPoolUndo<4, 32, 4, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             } else if (imgsPerThread == 2) {
-                kCrossMapMaxPoolUndo<4, 32, 2, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             } else {
-                kCrossMapMaxPoolUndo<4, 32, 1, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 1, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             }
         } else {
-            kCrossMapMaxPoolUndo<4, 32, 1, false, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+            kCrossMapMaxPoolUndo<4, 32, 1, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                          imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                          scaleTargets, scaleOutputs);
         }
@@ -1357,20 +1347,20 @@ void convCrossMapMaxPoolUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& max
         assert(target.isSameDims(images));
         if (!checkCaseBounds) {
             if (imgsPerThread == 4) {
-                kCrossMapMaxPoolUndo<4, 32, 4, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             } else if (imgsPerThread == 2) {
-                kCrossMapMaxPoolUndo<4, 32, 2, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             } else {
-                kCrossMapMaxPoolUndo<4, 32, 1, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kCrossMapMaxPoolUndo<4, 32, 1, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                              imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                              scaleTargets, scaleOutputs);
             }
         } else {
-            kCrossMapMaxPoolUndo<4, 32, 1, true, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+            kCrossMapMaxPoolUndo<4, 32, 1, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                                          imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride,
                                                                                          scaleTargets, scaleOutputs);
         }
@@ -2070,30 +2060,26 @@ void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, N
 void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, NVMatrix& target,
                       int subsX, int startX, int strideX, int outputsX, float scaleTargets, float scaleOutput) {
     int outputs = outputsX * outputsX;
-    int numImages = images.getNumCols();
-    int numFilters = maxGrads.getNumRows() / outputs;
-    int imgPixels = images.getNumRows() / numFilters;
-    assert(images.getNumRows() == numFilters * imgPixels);
+    int numImages = images.size[0];
+    int numFilters = maxGrads.size[1] / outputs;
+    int imgPixels = images.size[1] / numFilters;
+    assert(images.size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgSize * imgSize == imgPixels);
-    assert(maxGrads.getNumRows() == numFilters * outputs);
-    assert(maxGrads.getNumCols() == numImages);
-    assert(!images.isTrans());
-    assert(!target.isTrans());
-    assert(!maxGrads.isTrans());
-    assert(!maxActs.isTrans());
-    assert(images.isContiguous());
-    assert(maxGrads.isContiguous());
-    assert(maxActs.isContiguous());
+    assert(maxGrads.size[1] == numFilters * outputs);
+    assert(maxGrads.size[0] == numImages);
+    assert(THCudaTensor_isContiguous(images));
+    assert(THCudaTensor_isContiguous(maxGrads));
+    assert(THCudaTensor_isContiguous(maxActs));
     assert(maxGrads.isSameDims(maxActs));
     assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
     
     assert(strideX <= subsX);
     
-    target.resize(images);
-    assert(target.isContiguous());
+    THCudaTensor_resizeAs(target, images);
+    assert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     int checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2101,54 +2087,54 @@ void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, N
     if (imgsPerThread == 4) {
         if  (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 4, 2, false, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 4, 2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 4, 2, true, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 4, 2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 4, 2, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 4, 2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 4, 2, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 4, 2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         }
     } else if (imgsPerThread == 2) {
         if  (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 2, 2, false, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 2, 2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 2, 2, true, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 2, 2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 2, 2, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 2, 2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 2, 2, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 2, 2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         }
     } else {
         if  (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 1, 2, false, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 1, 2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 1, 2, true, true><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 1, 2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalMaxUndo<4, 32, 1, 2, false, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 1, 2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalMaxUndo<4, 32, 1, 2, true, false><<<blocks, threads, 0>>>(images.getDevData(), maxGrads.getDevData(), maxActs.getDevData(), target.getDevData(),
+                kLocalMaxUndo<4, 32, 1, 2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, scaleTargets, scaleOutput);
             }
         }
@@ -2168,23 +2154,21 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target, int subsX, int start
 void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize,
                       float scaleTargets, float scaleOutput) {
-    int numImages = avgGrads.getNumCols();
+    int numImages = avgGrads.size[0];
 
     int outputs = outputsX * outputsX;
     int imgPixels = imgSize * imgSize;
-    int numFilters = avgGrads.getNumRows() / outputs;
-    assert(avgGrads.getNumRows() == numFilters * outputs);
+    int numFilters = avgGrads.size[1] / outputs;
+    assert(avgGrads.size[1] == numFilters * outputs);
 
-    assert(!target.isTrans());
-    assert(!avgGrads.isTrans());
-    assert(avgGrads.isContiguous());
+    assert(THCudaTensor_isContiguous(avgGrads)));
     assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
     
     assert(strideX <= subsX);
     
-    target.resize(numFilters * imgPixels, numImages);
-    assert(target.isContiguous());
+    THCudaTensor_resize2d(target, numFilters * imgPixels, numImages);
+    assert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     int checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2192,21 +2176,21 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 4, 4, false, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 4, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 4, 4, true, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 4, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 4, 4, false, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 4, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 4, 4, true, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 4, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
@@ -2214,21 +2198,21 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 2, 4, false, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 2, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 2, 4, true, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 2, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 2, 4, false, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 2, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 2, 4, true, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 2, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
@@ -2236,21 +2220,21 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
     } else {
         if (checkCaseBounds) {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 1, 4, false, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 1, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 1, 4, true, true><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 1, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
         } else {
             if (scaleTargets == 0 && scaleOutput == 1) {
-                kLocalAvgUndo<4, 32, 1, 4, false, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 1, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                        imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                        outputsX, scaleTargets, scaleOutput);
             } else {
-                kLocalAvgUndo<4, 32, 1, 4, true, false><<<blocks, threads, 0>>>(avgGrads.getDevData(), target.getDevData(),
+                kLocalAvgUndo<4, 32, 1, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(avgGrads), THCudaTensor_data(target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX,
                                                                       outputsX, scaleTargets, scaleOutput);
             }
@@ -2271,22 +2255,20 @@ void convResponseNorm(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int 
  * target:      (numFilters, imgPixels, numImages) (out)
  */
 void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
-    int numImages = images.getNumCols();
-    int imgPixels = images.getNumRows() / numFilters;
-    assert(images.getNumRows() == numFilters * imgPixels);
+    int numImages = images.size[0];
+    int imgPixels = images.size[1] / numFilters;
+    assert(images.size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(meanDiffs.isSameDims(images));
     
-    assert(!meanDiffs.isTrans());
-    assert(!images.isTrans());
-    assert(images.isContiguous());
-    assert(meanDiffs.isContiguous());
+    assert(THCudaTensor_isContiguous(images));
+    assert(THCudaTensor_isContiguous(meanDiffs));
     assert(numFilters % 16 == 0 || numFilters <= 8);
 
-    target.resize(images);
-    denoms.resize(images);
-    assert(target.isContiguous());
+    THCudaTensor_resizeAs(target, images);
+    THCudaTensor_resizeAs(denoms, images);
+    assert(THCudaTensor_isContiguous(target));
     if (sizeX >= 6 && numFilters % 4 == 0) {
         // This one is faster for large regions (my tests show regions >= 6...)
         int imgsPerThread = 8;
@@ -2300,11 +2282,11 @@ void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, N
 
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kCNorm2<8, 8, 4, true>, cudaFuncCachePreferL1); // L1 faster here
-            kCNorm2<8, 8, 4, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+            kCNorm2<8, 8, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                            imgSize, numFilters, numImages, sizeX, addScale, powScale, minDiv);
         } else {
             cudaFuncSetCacheConfig(kCNorm2<8, 8, 4, false>, cudaFuncCachePreferL1); // L1 faster here
-            kCNorm2<8, 8, 4, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+            kCNorm2<8, 8, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                            imgSize, numFilters, numImages, sizeX, addScale, powScale, minDiv);
         }
     } else {
@@ -2315,81 +2297,81 @@ void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, N
             if (numFilters == 1) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 1, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 1, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 1, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 1, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 2) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 2, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 2, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 2, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 2, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 3) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 3, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 3, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 3, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 3, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 3, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 3, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 4) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 4, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 4, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 4, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 4, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 5) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 5, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 5, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 5, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 5, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 5, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 5, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 6) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 6, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 6, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 6, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 6, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 6, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 6, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 7) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 7, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 7, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 7, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 7, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 7, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 7, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             } else  if (numFilters == 8) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 8, true>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 8, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 8, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 } else {
                     cudaFuncSetCacheConfig(kCNorm_fewfilter<1, 8, false>, cudaFuncCachePreferL1);
-                    kCNorm_fewfilter<1, 8, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                    kCNorm_fewfilter<1, 8, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                       imgSize, numImages, sizeX, addScale, powScale, minDiv);
                 }
             }
@@ -2398,11 +2380,11 @@ void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, N
             dim3 blocks(DIVUP(numImages,threads.x*4), (numFilters / (threads.y * 2)), imgPixels);
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kCNorm_manyfilter<4, 32, 4, 2, true>, cudaFuncCachePreferL1);
-                kCNorm_manyfilter<4, 32, 4, 2, true><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                kCNorm_manyfilter<4, 32, 4, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                   imgSize, numFilters, numImages, sizeX, addScale, powScale, minDiv);
             } else {
                 cudaFuncSetCacheConfig(kCNorm_manyfilter<4, 32, 4, 2, false>, cudaFuncCachePreferL1);
-                kCNorm_manyfilter<4, 32, 4, 2, false><<<blocks, threads, 0>>>(images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(),
+                kCNorm_manyfilter<4, 32, 4, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target),
                                                                   imgSize, numFilters, numImages, sizeX, addScale, powScale, minDiv);
             }
         }
@@ -2426,34 +2408,30 @@ void convContrastNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& meanDi
  */
 void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs, NVMatrix& acts, NVMatrix& target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads.getNumCols();
-    int imgPixels = outGrads.getNumRows() / numFilters;
+    int numImages = outGrads.size[0];
+    int imgPixels = outGrads.size[1] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
 
-    assert(outGrads.getNumRows() == numFilters * imgPixels);
+    assert(outGrads.size[1] == numFilters * imgPixels);
 
     assert(denoms.isSameDims(outGrads));
     assert(acts.isSameDims(denoms));
-    assert(!denoms.isTrans());
-    assert(!outGrads.isTrans());
-    assert(!acts.isTrans());
-    assert(!target.isTrans());
-    assert(outGrads.isContiguous());
+    assert(THCudaTensor_isContiguous(outGrads));
 
     assert(numFilters % 16 == 0);
     
-    target.resize(outGrads);
-    assert(target.isContiguous());
+    THCudaTensor_resizeAs(target, outGrads);
+    assert(THCudaTensor_isContiguous(target));
     // First do acts := -2 x scale x acts x outGrads / denoms
     // so that the main routine only has to do an addition in its inner loop.
     int prelimEltsPerThread = 8;
     dim3 threads(128);
-    dim3 blocks(DIVUP(outGrads.getNumElements(),(threads.x * prelimEltsPerThread)));
-    bool checkPrelimBounds = outGrads.getNumElements() % (threads.x * prelimEltsPerThread) != 0;
+    dim3 blocks(DIVUP(THCudaTensor_nElement(outGrads),(threads.x * prelimEltsPerThread)));
+    bool checkPrelimBounds = THCudaTensor_nElement(outGrads) % (threads.x * prelimEltsPerThread) != 0;
     //printf("num elts: %d, blocks: %d\n", outGrads.getNumElements(), blocks.x);
-    kRNormUndoPrelims<128, 8><<<blocks, threads, 0>>>(acts.getDevData(), denoms.getTextureObject(), outGrads.getTextureObject(), outGrads.getNumElements(), -2*addScale*powScale);
+    kRNormUndoPrelims<128, 8><<<blocks, threads, 0>>>(THCudaTensor_data(acts), THCudaTensor_getTextureObject(denoms), THCudaTensor_getTextureObject(outGrads), THCudaTensor_nElement(outGrads), -2*addScale*powScale);
 
     // Now the main routine
     if (sizeX >= 6 && numFilters % 4 == 0) {
@@ -2471,25 +2449,25 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
             if (checkCaseBounds) {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 8, 4, true, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 8, 4, true, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 8, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 8, 4, false, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 8, 4, false, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 8, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             } else {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 8, 4, true, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 8, 4, true, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 8, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 8, 4, false, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 8, 4, false, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 8, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             }
@@ -2497,25 +2475,25 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
             if (checkCaseBounds) {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 4, 4, true, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 4, 4, true, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 4, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 4, 4, false, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 4, 4, false, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 4, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             } else {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 4, 4, true, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 4, 4, true, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 4, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 4, 4, false, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 4, 4, false, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 4, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             }
@@ -2523,25 +2501,25 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
             if (checkCaseBounds) {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 2, 4, true, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 2, 4, true, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 2, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 2, 4, false, true>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 2, 4, false, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 2, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             } else {
                 if (scaleTargets == 0 && scaleOutput == 1) {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 2, 4, true, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 2, 4, true, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 2, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 } else {
                     cudaFuncSetCacheConfig(kRNormUndo2<16, 2, 4, false, false>, cudaFuncCachePreferL1);
-                    kRNormUndo2<16, 2, 4, false, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                                  target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                    kRNormUndo2<16, 2, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                                  THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                                   scaleTargets, scaleOutput);
                 }
             }
@@ -2555,25 +2533,25 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
         if (imgsPerThread == 4) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRNormUndo<4, 32, 4, 2, true>, cudaFuncCachePreferL1);
-                kRNormUndo<4, 32, 4, 2, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                          target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                kRNormUndo<4, 32, 4, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                          THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                           scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kRNormUndo<4, 32, 4, 2, false>, cudaFuncCachePreferL1);
-                kRNormUndo<4, 32, 4, 2, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                          target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                kRNormUndo<4, 32, 4, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                          THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                           scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRNormUndo<4, 32, 1, 2, true>, cudaFuncCachePreferL1);
-                kRNormUndo<4, 32, 1, 2, true><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                          target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                kRNormUndo<4, 32, 1, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                          THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                           scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kRNormUndo<4, 32, 1, 2, false>, cudaFuncCachePreferL1);
-                kRNormUndo<4, 32, 1, 2, false><<<blocks, threads, 0>>>(outGrads.getDevData(), denoms.getDevData(), inputs.getDevData(), acts.getDevData(),
-                                                                          target.getDevData(), imgSize, numFilters, numImages, sizeX, powScale,
+                kRNormUndo<4, 32, 1, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(outGrads), THCudaTensor_data(denoms), THCudaTensor_data(inputs), THCudaTensor_data(acts),
+                                                                          THCudaTensor_data(target), imgSize, numFilters, numImages, sizeX, powScale,
                                                                           scaleTargets, scaleOutput);
             }
         }
@@ -2588,16 +2566,14 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
  * imgSize = scale * tgtSize
  */
 void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgtSize, float scale) {
-    assert(!images.isTrans());
-    assert(!target.isTrans());
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
-    int numChannels = images.getNumRows() / imgPixels;
-    int numImages = images.getNumCols();
-    assert(images.getNumRows() == numChannels * imgPixels);
+    int numChannels = images.size[1] / imgPixels;
+    int numImages = images.size[0];
+    assert(images.size[1] == numChannels * imgPixels);
     
-    target.resize(numChannels * tgtPixels, numImages);
-    assert(target.isContiguous());
+    THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
+    assert(THCudaTensor_isContiguous(target));
     int numChunksX = DIVUP(tgtSize, 4);
     int numChunks = numChunksX * numChunksX;
     double imgCenter = imgSize * 0.5;
@@ -2611,26 +2587,26 @@ void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgt
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<4, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<4, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<4, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<4, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<2, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<2, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<2, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<2, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<1, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<1, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<1, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<1, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgSize, tgtSize, numImages, images.getStride(), scale, centerScale);
+            kResizeBilinear<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
         }
     }
     getLastCudaError("convResizeBilinear: kernel execution failed");
@@ -2641,14 +2617,12 @@ void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgt
  * target:      (3, imgPixels, numImages)
  */
 void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
-    assert(!images.isTrans());
-    assert(!target.isTrans());
-    int imgPixels = images.getNumRows() / 3;
-    int numImages = images.getNumCols();
-    assert(images.getNumRows() == 3 * imgPixels);
+    int imgPixels = images.size[1] / 3;
+    int numImages = images.size[0];
+    assert(images.size[1] == 3 * imgPixels);
     
-    target.resize(3 * imgPixels, numImages);
-    assert(target.isContiguous());
+    THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
+    assert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2656,26 +2630,26 @@ void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<4, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<4, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<4, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<4, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<2, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<2, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<2, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<2, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<1, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<1, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<1, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<1, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+            kRGBToYUV<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
         }
     }
     getLastCudaError("convRGBToYUV: kernel execution failed");
@@ -2686,14 +2660,12 @@ void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
  * target:      (3, imgPixels, numImages)
  */
 void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
-    assert(!images.isTrans());
-    assert(!target.isTrans());
-    int imgPixels = images.getNumRows() / 3;
-    int numImages = images.getNumCols();
-    assert(images.getNumRows() == 3 * imgPixels);
+    int imgPixels = images.size[1] / 3;
+    int numImages = images.size[0];
+    assert(images.size[1] == 3 * imgPixels);
     
-    target.resize(3 * imgPixels, numImages);
-    assert(target.isContiguous());
+    THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
+    assert(THCudaTensor_isContiguous(target));
     
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
@@ -2703,54 +2675,54 @@ void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, true, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, false, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, true, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, false, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         }
     } else if (imgsPerThread == 2) {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, true, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, false, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, true, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, false, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         }
     } else {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, true, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<1, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, false, true><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<1, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, true, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<1, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, false, false><<<blocks, threads, 0>>>(images.getDevData(), target.getDevData(), imgPixels, numImages, images.getStride());
+                kRGBToLAB<1, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
             }
         }
     }
@@ -2762,39 +2734,39 @@ void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
  * target:  (numChannels, tgtPixels, numImages)
  */
 void convCrop(NVMatrix& imgs, NVMatrix& target, int imgSize, int tgtSize, int startY, int startX) {
-    int numImages = imgs.getNumCols();
+    int numImages = imgs.size[0];
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
 
-    int numChannels = imgs.getNumRows() / imgPixels;
-    assert(imgs.getNumRows() == imgPixels * numChannels);
+    int numChannels = imgs.size[1] / imgPixels;
+    assert(imgs.size[1] == imgPixels * numChannels);
     assert(imgPixels == imgSize * imgSize);
     assert(imgSize - startY >= tgtSize);
     assert(imgSize - startX >= tgtSize);
     assert(startY >= 0);
     assert(startX >= 0);
-    target.resize(numChannels * tgtPixels, numImages);
+    THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 blocks(DIVUP(numImages, 32 * imgsPerThread), numChannels * DIVUP(tgtPixels, 4));
     dim3 threads(32, 4);
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
-            kCrop<4, true><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<4, false><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
-            kCrop<2, true><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<2, false><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         }
     } else {
         if (checkCaseBounds) {
-            kCrop<1, true><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<1, false><<<blocks, threads, 0>>>(imgs.getDevData(), target.getDevData(), numImages, imgs.getStride(), imgSize, tgtSize, startY, startX);
+            kCrop<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
         }
     }
     getLastCudaError("convCrop: kernel execution failed");
@@ -2812,48 +2784,46 @@ void convCrop(NVMatrix& imgs, NVMatrix& target, int imgSize, int tgtSize, int st
  */
 void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& target,
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
-    int numImages = images.getNumCols();
-    int imgPixels = images.getNumRows() / numFilters;
-    assert(images.getNumRows() == numFilters * imgPixels);
+    int numImages = images.size[0];
+    int imgPixels = images.size[1] / numFilters;
+    assert(images.size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(meanDiffs.isSameDims(images));
     assert(sizeF > 0 && sizeF <= numFilters);
     
-    assert(!meanDiffs.isTrans());
-    assert(!images.isTrans());
-    assert(images.isContiguous());
-    assert(meanDiffs.isContiguous());
+    assert(THCudaTensor_isContiguous(images));
+    assert(THCudaTensor_isContiguous(meanDiffs));
     assert(numFilters % 16 == 0);
 
-    target.resize(images);
-//    denoms.resize(images);
-    assert(target.isContiguous());
+    THCudaTensor_resizeAs(target, images);
+    //          THCudaTensor_resizeAs(denoms, images);
+    assert(THCudaTensor_isContiguous(target));
 
     bool checkCaseBounds = numImages % 128 != 0;
 
     dim3 threads(32, 4);
     dim3 blocks(DIVUP(numImages,32*4) * imgSize, (numFilters / 4) * imgSize);
 //    printf("convContrastNormCrossMap imgs: %p, meanDiffs: %p, denoms: %p, target: %p, imgSize: %d, numFilters: %d, numImages: %d, sizeF: %d, addScale: %f, powScale: %f, minDiv: %f, blocked: %d\n",
-//            images.getDevData(), meanDiffs.getDevData(), denoms.getDevData(), target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv, blocked);
+//            THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv, blocked);
     if (blocked) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, true>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, true, true><<<blocks, threads, 0>>>(images.getTextureObject(), meanDiffs.getTextureObject(), target.getDevData(),
+            kFCNorm<4, 32, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, true>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, false, true><<<blocks, threads, 0>>>(images.getTextureObject(), meanDiffs.getTextureObject(), target.getDevData(),
+            kFCNorm<4, 32, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, false>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, true, false><<<blocks, threads, 0>>>(images.getTextureObject(), meanDiffs.getTextureObject(), target.getDevData(),
+            kFCNorm<4, 32, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, false>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, false, false><<<blocks, threads, 0>>>(images.getTextureObject(), meanDiffs.getTextureObject(), target.getDevData(),
+            kFCNorm<4, 32, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         }
     }
@@ -2872,23 +2842,20 @@ void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& t
  */
 void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& inputs, NVMatrix& acts, NVMatrix& target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads.getNumCols();
-    int imgPixels = outGrads.getNumRows() / numFilters;
+    int numImages = outGrads.size[0];
+    int imgPixels = outGrads.size[1] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(sizeF > 0 && sizeF <= numFilters);
-    assert(outGrads.getNumRows() == numFilters * imgPixels);
+    assert(outGrads.size[1] == numFilters * imgPixels);
 
-    assert(!outGrads.isTrans());
-    assert(!acts.isTrans());
-    assert(!target.isTrans());
-    assert(outGrads.isContiguous());
+    assert(THCudaTensor_isContiguous(outGrads));
 
     assert(numFilters % 16 == 0);
 
-    target.resize(outGrads);
-    assert(target.isContiguous());
+    THCudaTensor_resizeAs(target, outGrads);
+    assert(THCudaTensor_isContiguous(target));
 
 
     dim3 threads2 = dim3(32, 4);
@@ -2899,25 +2866,25 @@ void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& inputs, NVMatrix
         if (scaleTargets == 0 && scaleOutput == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, true, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, true, true><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, false, true, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, false, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, false, true><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, false, false, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, true, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, true, true><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, true, true, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, false, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, false, true><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, true, false, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         }
@@ -2925,25 +2892,25 @@ void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& inputs, NVMatrix
         if (scaleTargets == 0 && scaleOutput == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, true, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, true, false><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, false, true, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, false, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, false, false><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, false, false, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, true, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, true, false><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, true, true, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, false, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, false, false><<<blocks2, threads2, 0>>>(outGrads.getTextureObject(), inputs.getTextureObject(), acts.getTextureObject(),
-                                                                        target.getDevData(), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
+                kFRNormUndo2<4, 32, 4, true, false, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                                                                        THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         }
