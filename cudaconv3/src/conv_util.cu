@@ -71,11 +71,11 @@ __global__ void kReflectH(float * imgs, float * targets,
  * imgs:    (numColors, imgSize, imgSize, numCases)
  * targets: (numColors, imgSize, imgSize, numCases)
  */
-void convReflectHorizontal(NVMatrix& images, NVMatrix& targets, int imgSize) {
-    int numCases = images.size[0]; 
+void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgSize) {
+    int numCases = images->size[0]; 
     int imgPixels = imgSize * imgSize;
-    int numColors = images.size[1] / imgPixels;
-    assert(numColors * imgPixels == images.size[1]);
+    int numColors = images->size[1] / imgPixels;
+    assert(numColors * imgPixels == images->size[1]);
     assert(numColors > 0 && numColors <= 3);
     
     THCudaTensor_resizeAs(targets, images);
@@ -201,10 +201,10 @@ __global__ void kNormalizeLCWeights(float* weights, const uint numFilters, const
 /*
  * weights: (numModules, numColors, filterPixels, numFilters)
  */
-void normalizeLocalWeights(NVMatrix& weights, int numModules, float norm) {
-    int numFilters = weights.size[0];
-    int weightsPerFilter = weights.size[1] / numModules;
-    assert(numModules * weightsPerFilter == weights.size[1]);
+void normalizeLocalWeights(THCudaTensor* weights, int numModules, float norm) {
+    int numFilters = weights->size[0];
+    int weightsPerFilter = weights->size[1] / numModules;
+    assert(numModules * weightsPerFilter == weights->size[1]);
     
     assert(THCudaTensor_isContiguous(weights));
     assert(numFilters % 16 == 0);
@@ -658,9 +658,9 @@ __global__ void kBedOfNails(float* imgs, float* target, const int imgSize, const
  * imgs:        (numChannels, imgPixels, numImages)
  * target:      (numChannels, outputs, numImages)
  */
-void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int imgSize, int startX, int strideX,
+void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels, int imgSize, int startX, int strideX,
                      bool reverse, float scaleTargets, float scaleOutput) {
-    int numImages = reverse ? target.size[0] : images.size[0];
+    int numImages = reverse ? target->size[0] : images->size[0];
     int imgPixels = imgSize * imgSize;
 
     assert(THCudaTensor_isContiguous(images));
@@ -670,9 +670,9 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
     int outputsX = DIVUP(imgSize, strideX);
     int outputs = outputsX * outputsX;
     if (reverse) {
-        assert(target.size[1] == numChannels * outputs);
+        assert(target->size[1] == numChannels * outputs);
     } else  {
-        assert(images.size[1] == numChannels * imgPixels);
+        assert(images->size[1] == numChannels * imgPixels);
     }
     
     if (scaleTargets == 0) {
@@ -684,11 +684,11 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
         }
     } else {
         if (reverse) {
-            assert(images.size[1] == numChannels * outputs);
-            assert(images.size[0] == numImages);
+            assert(images->size[1] == numChannels * outputs);
+            assert(images->size[0] == numImages);
         } else {
-            assert(target.size[1] == numChannels * outputs);
-            assert(target.size[0] == numImages);
+            assert(target->size[1] == numChannels * outputs);
+            assert(target->size[0] == numImages);
         }
     }
     
@@ -779,12 +779,12 @@ void _convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int im
     }
 }
 
-void convBedOfNails(NVMatrix& images, NVMatrix& target, int numChannels, int imgSize, int startX,
+void convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels, int imgSize, int startX,
                     int strideX, float scaleTargets, float scaleOutput) {
     _convBedOfNails(images, target, numChannels, imgSize, startX, strideX, false, scaleTargets, scaleOutput);
 }
 
-void convBedOfNailsUndo(NVMatrix& actsGrad, NVMatrix& target, int numChannels, int imgSize,
+void convBedOfNailsUndo(THCudaTensor* actsGrad, THCudaTensor* target, int numChannels, int imgSize,
                         int startX, int strideX, float scaleTargets, float scaleOutput) {
 
     _convBedOfNails(target, actsGrad, numChannels, imgSize, startX, strideX, true, scaleTargets, scaleOutput);
@@ -796,23 +796,23 @@ void convBedOfNailsUndo(NVMatrix& actsGrad, NVMatrix& target, int numChannels, i
  * filter:      (1, 2*radius + 1)
  * target:      (numChannels, imgPixels, numImages)
  */
-void convGaussianBlur(NVMatrix& images, NVMatrix& filter, NVMatrix& target, bool horiz, int numChannels,
+void convGaussianBlur(THCudaTensor* images, THCudaTensor* filter, THCudaTensor* target, bool horiz, int numChannels,
                       float scaleTargets, float scaleOutputs) {
-    int numImages = images.size[0];
-    int radius = filter.size[0] / 2;
-    int imgPixels = images.size[1] / numChannels;
+    int numImages = images->size[0];
+    int radius = filter->size[0] / 2;
+    int imgPixels = images->size[1] / numChannels;
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgPixels == imgSize * imgSize);
     assert(radius >= 1 && radius <= 4);
     assert(imgSize >= 2 * radius + 1);
-    assert(filter.size[1] == 1);
-    assert(images.size[1] == numChannels * imgPixels);
+    assert(filter->size[1] == 1);
+    assert(images->size[1] == numChannels * imgPixels);
     assert(THCudaTensor_isContiguous(target));
     if (scaleTargets == 0) {
       THCudaTensor_resizeAs(target, images);
     } else {
-        assert(target.isSameDims(images));
+      assert(THCudaTensor_isSameSizeAs(target, images));
     }
 
     dim3 threads(32, 4);
@@ -820,21 +820,21 @@ void convGaussianBlur(NVMatrix& images, NVMatrix& filter, NVMatrix& target, bool
     if (radius == 1) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 1>, cudaFuncCachePreferL1);
         kGaussianBlur<4, 32, 1><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
-                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
+                                                           imgSize, numImages, images->stride[0], horiz, scaleTargets, scaleOutputs);
 
     } else if (radius == 2) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 2>, cudaFuncCachePreferL1);
         kGaussianBlur<4, 32, 2><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
-                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
+                                                           imgSize, numImages, images->stride[0], horiz, scaleTargets, scaleOutputs);
 
     } else if (radius == 3) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 3>, cudaFuncCachePreferL1);
         kGaussianBlur<4, 32, 3><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
-                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
+                                                           imgSize, numImages, images->stride[0], horiz, scaleTargets, scaleOutputs);
     } else if (radius == 4) {
         cudaFuncSetCacheConfig(kGaussianBlur<4, 32, 4>, cudaFuncCachePreferL1);
         kGaussianBlur<4, 32, 4><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filter), THCudaTensor_data(target),
-                                                           imgSize, numImages, images.stride[0], horiz, scaleTargets, scaleOutputs);
+                                                           imgSize, numImages, images->stride[0], horiz, scaleTargets, scaleOutputs);
     }
 }
 
@@ -1291,24 +1291,24 @@ __global__ void kCrossMapMaxPoolUndo(float* imgs, float* maxGrads, float* maxAct
  * maxActs:             (numOutputs, imgPixels, numImages)
  * target:              (numFilters, imgPixels, numImages)
  */
-void convCrossMapMaxPoolUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, NVMatrix& target,
+void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                              const int imgSize, const int startF, const int poolSize,
                              const int stride, const float scaleTargets, const float scaleOutputs) {
-    int numImages = images.size[0];
+    int numImages = images->size[0];
     int imgPixels = imgSize * imgSize;
-    int numFilters = images.size[1] / imgPixels;
-    int numOutputs = maxActs.size[1] / imgPixels;
-    assert(images.size[1] == numFilters * imgPixels);
-    assert(maxGrads.size[1] == numOutputs * imgPixels);
-    assert(maxGrads.size[0] == numImages);
-    assert(maxGrads.isSameDims(maxActs));
+    int numFilters = images->size[1] / imgPixels;
+    int numOutputs = maxActs->size[1] / imgPixels;
+    assert(images->size[1] == numFilters * imgPixels);
+    assert(maxGrads->size[1] == numOutputs * imgPixels);
+    assert(maxGrads->size[0] == numImages);
+    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
 
-    assert(images.size[1] == numFilters * imgPixels);
+    assert(images->size[1] == numFilters * imgPixels);
 
     assert(THCudaTensor_isContiguous(images));
     assert(THCudaTensor_isContiguous(maxGrads));
     assert(THCudaTensor_isContiguous(maxActs));
-    assert(maxGrads.isSameDims(maxActs));
+    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
 //    assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
 
@@ -1344,7 +1344,7 @@ void convCrossMapMaxPoolUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& max
                                                                                          scaleTargets, scaleOutputs);
         }
     } else {
-        assert(target.isSameDims(images));
+      assert(THCudaTensor_isSameSizeAs(target, images));
         if (!checkCaseBounds) {
             if (imgsPerThread == 4) {
                 kCrossMapMaxPoolUndo<4, 32, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
@@ -2046,7 +2046,7 @@ __global__ void kRNormUndo2(float* outGrads, float* denoms, float* inputs, float
     }
 }
 
-void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, NVMatrix& target,
+void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX) {
     convLocalMaxUndo(images, maxGrads, maxActs, target, subsX, startX, strideX, outputsX, 0, 1);
 }
@@ -2057,22 +2057,22 @@ void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, N
  * rMaxActs:    (numFilters, numOutputs, numImages)
  * target:      (numFilters, imgPixels, numImages)
  */
-void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, NVMatrix& target,
+void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, float scaleTargets, float scaleOutput) {
     int outputs = outputsX * outputsX;
-    int numImages = images.size[0];
-    int numFilters = maxGrads.size[1] / outputs;
-    int imgPixels = images.size[1] / numFilters;
-    assert(images.size[1] == numFilters * imgPixels);
+    int numImages = images->size[0];
+    int numFilters = maxGrads->size[1] / outputs;
+    int imgPixels = images->size[1] / numFilters;
+    assert(images->size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgSize * imgSize == imgPixels);
-    assert(maxGrads.size[1] == numFilters * outputs);
-    assert(maxGrads.size[0] == numImages);
+    assert(maxGrads->size[1] == numFilters * outputs);
+    assert(maxGrads->size[0] == numImages);
     assert(THCudaTensor_isContiguous(images));
     assert(THCudaTensor_isContiguous(maxGrads));
     assert(THCudaTensor_isContiguous(maxActs));
-    assert(maxGrads.isSameDims(maxActs));
+    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
     assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
     
@@ -2143,7 +2143,7 @@ void convLocalMaxUndo(NVMatrix& images, NVMatrix& maxGrads, NVMatrix& maxActs, N
     getLastCudaError("convLocalMaxUndo: kernel execution failed");
 }
 
-void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target, int subsX, int startX, int strideX, int outputsX, int imgSize) {
+void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target, int subsX, int startX, int strideX, int outputsX, int imgSize) {
     convLocalAvgUndo(avgGrads, target, subsX, startX, strideX, outputsX, imgSize, 0, 1);
 }
 
@@ -2151,15 +2151,15 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target, int subsX, int start
  * avgGrads:    (numFilters, numOutputs, numImages)
  * target:      (numFilters, imgPixels, numImages)
  */
-void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
+void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize,
                       float scaleTargets, float scaleOutput) {
-    int numImages = avgGrads.size[0];
+    int numImages = avgGrads->size[0];
 
     int outputs = outputsX * outputsX;
     int imgPixels = imgSize * imgSize;
-    int numFilters = avgGrads.size[1] / outputs;
-    assert(avgGrads.size[1] == numFilters * outputs);
+    int numFilters = avgGrads->size[1] / outputs;
+    assert(avgGrads->size[1] == numFilters * outputs);
 
     assert(THCudaTensor_isContiguous(avgGrads)));
     assert(numFilters % 16 == 0);
@@ -2244,7 +2244,7 @@ void convLocalAvgUndo(NVMatrix& avgGrads, NVMatrix& target,
     getLastCudaError("convLocalAvgUndo: kernel execution failed");
 }
 
-void convResponseNorm(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
+void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
     convContrastNorm(images, images, denoms, target, numFilters, sizeX, addScale, powScale, minDiv);
 }
 
@@ -2254,13 +2254,13 @@ void convResponseNorm(NVMatrix& images, NVMatrix& denoms, NVMatrix& target, int 
  * denoms:      (numFilters, imgPixels, numImages) (out)
  * target:      (numFilters, imgPixels, numImages) (out)
  */
-void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, NVMatrix& target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
-    int numImages = images.size[0];
-    int imgPixels = images.size[1] / numFilters;
-    assert(images.size[1] == numFilters * imgPixels);
+void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
+    int numImages = images->size[0];
+    int imgPixels = images->size[1] / numFilters;
+    assert(images->size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
-    assert(meanDiffs.isSameDims(images));
+    assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
     
     assert(THCudaTensor_isContiguous(images));
     assert(THCudaTensor_isContiguous(meanDiffs));
@@ -2392,7 +2392,7 @@ void convContrastNorm(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& denoms, N
     getLastCudaError("convResponseNorm: kernel execution failed");
 }
 
-void convContrastNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& meanDiffs, NVMatrix& acts, NVMatrix& target, int numFilters,
+void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput) {
     convResponseNormUndo(outGrads, denoms, meanDiffs, acts, target, numFilters, sizeX, addScale, powScale, scaleTargets, scaleOutput);
 }
@@ -2406,18 +2406,18 @@ void convContrastNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& meanDi
  *
  * THIS WILL OVERWRITE THE ACTS MATRIX.
  */
-void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs, NVMatrix& acts, NVMatrix& target, int numFilters,
+void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads.size[0];
-    int imgPixels = outGrads.size[1] / numFilters;
+    int numImages = outGrads->size[0];
+    int imgPixels = outGrads->size[1] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
 
-    assert(outGrads.size[1] == numFilters * imgPixels);
+    assert(outGrads->size[1] == numFilters * imgPixels);
 
-    assert(denoms.isSameDims(outGrads));
-    assert(acts.isSameDims(denoms));
+    assert(THCudaTensor_isSameSizeAs(denoms, outGrads));
+    assert(THCudaTensor_isSameSizeAs(acts, denoms));
     assert(THCudaTensor_isContiguous(outGrads));
 
     assert(numFilters % 16 == 0);
@@ -2565,12 +2565,12 @@ void convResponseNormUndo(NVMatrix& outGrads, NVMatrix& denoms, NVMatrix& inputs
  *
  * imgSize = scale * tgtSize
  */
-void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgtSize, float scale) {
+void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale) {
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
-    int numChannels = images.size[1] / imgPixels;
-    int numImages = images.size[0];
-    assert(images.size[1] == numChannels * imgPixels);
+    int numChannels = images->size[1] / imgPixels;
+    int numImages = images->size[0];
+    assert(images->size[1] == numChannels * imgPixels);
     
     THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2587,26 +2587,26 @@ void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgt
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<4, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<4, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<2, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<2, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kResizeBilinear<1, true>, cudaFuncCachePreferL1);
-            kResizeBilinear<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         } else {
             cudaFuncSetCacheConfig(kResizeBilinear<1, false>, cudaFuncCachePreferL1);
-            kResizeBilinear<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images.stride[0], scale, centerScale);
+            kResizeBilinear<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgSize, tgtSize, numImages, images->stride[0], scale, centerScale);
         }
     }
     getLastCudaError("convResizeBilinear: kernel execution failed");
@@ -2616,10 +2616,10 @@ void convResizeBilinear(NVMatrix& images, NVMatrix& target, int imgSize, int tgt
  * imgs:        (3, imgPixels, numImages) with given imgStride
  * target:      (3, imgPixels, numImages)
  */
-void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
-    int imgPixels = images.size[1] / 3;
-    int numImages = images.size[0];
-    assert(images.size[1] == 3 * imgPixels);
+void convRGBToYUV(THCudaTensor* images, THCudaTensor* target) {
+    int imgPixels = images->size[1] / 3;
+    int numImages = images->size[0];
+    assert(images->size[1] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2630,26 +2630,26 @@ void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<4, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<4, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<2, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<2, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kRGBToYUV<1, true>, cudaFuncCachePreferL1);
-            kRGBToYUV<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         } else {
             cudaFuncSetCacheConfig(kRGBToYUV<1, false>, cudaFuncCachePreferL1);
-            kRGBToYUV<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+            kRGBToYUV<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
         }
     }
     getLastCudaError("convRGBToYUV: kernel execution failed");
@@ -2659,10 +2659,10 @@ void convRGBToYUV(NVMatrix& images, NVMatrix& target) {
  * imgs:        (3, imgPixels, numImages) with given imgStride
  * target:      (3, imgPixels, numImages)
  */
-void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
-    int imgPixels = images.size[1] / 3;
-    int numImages = images.size[0];
-    assert(images.size[1] == 3 * imgPixels);
+void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center) {
+    int imgPixels = images->size[1] / 3;
+    int numImages = images->size[0];
+    assert(images->size[1] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2675,54 +2675,54 @@ void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<4, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<4, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<4, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<4, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         }
     } else if (imgsPerThread == 2) {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<2, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<2, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<2, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<2, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<2, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         }
     } else {
         if (center) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, true, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<1, true, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, false, true>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<1, false, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, true, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<1, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             } else {
                 cudaFuncSetCacheConfig(kRGBToLAB<1, false, false>, cudaFuncCachePreferL1);
-                kRGBToLAB<1, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images.stride[0]);
+                kRGBToLAB<1, false, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target), imgPixels, numImages, images->stride[0]);
             }
         }
     }
@@ -2733,13 +2733,13 @@ void convRGBToLAB(NVMatrix& images, NVMatrix& target, bool center) {
  * imgs:    (numChannels, imgPixels, numImages) with given imgStride
  * target:  (numChannels, tgtPixels, numImages)
  */
-void convCrop(NVMatrix& imgs, NVMatrix& target, int imgSize, int tgtSize, int startY, int startX) {
-    int numImages = imgs.size[0];
+void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize, int startY, int startX) {
+    int numImages = imgs->size[0];
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
 
-    int numChannels = imgs.size[1] / imgPixels;
-    assert(imgs.size[1] == imgPixels * numChannels);
+    int numChannels = imgs->size[1] / imgPixels;
+    assert(imgs->size[1] == imgPixels * numChannels);
     assert(imgPixels == imgSize * imgSize);
     assert(imgSize - startY >= tgtSize);
     assert(imgSize - startX >= tgtSize);
@@ -2752,21 +2752,21 @@ void convCrop(NVMatrix& imgs, NVMatrix& target, int imgSize, int tgtSize, int st
     dim3 threads(32, 4);
     if (imgsPerThread == 4) {
         if (checkCaseBounds) {
-            kCrop<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<4, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<4, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         }
     } else if (imgsPerThread == 2) {
         if (checkCaseBounds) {
-            kCrop<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<2, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<2, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         }
     } else {
         if (checkCaseBounds) {
-            kCrop<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<1, true><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         } else {
-            kCrop<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs.stride[0], imgSize, tgtSize, startY, startX);
+            kCrop<1, false><<<blocks, threads, 0>>>(THCudaTensor_data(imgs), THCudaTensor_data(target), numImages, imgs->stride[0], imgSize, tgtSize, startY, startX);
         }
     }
     getLastCudaError("convCrop: kernel execution failed");
@@ -2782,14 +2782,14 @@ void convCrop(NVMatrix& imgs, NVMatrix& target, int imgSize, int tgtSize, int st
  * to be equal to images. In other words, this isn't really doing contrast normalization,
  * just response normalization.
  */
-void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& target,
+void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* target,
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
-    int numImages = images.size[0];
-    int imgPixels = images.size[1] / numFilters;
-    assert(images.size[1] == numFilters * imgPixels);
+    int numImages = images->size[0];
+    int imgPixels = images->size[1] / numFilters;
+    assert(images->size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
-    assert(meanDiffs.isSameDims(images));
+    assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
     assert(sizeF > 0 && sizeF <= numFilters);
     
     assert(THCudaTensor_isContiguous(images));
@@ -2840,15 +2840,15 @@ void convContrastNormCrossMap(NVMatrix& images, NVMatrix& meanDiffs, NVMatrix& t
  *
  * THIS WILL OVERWRITE THE ACTS MATRIX.
  */
-void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& inputs, NVMatrix& acts, NVMatrix& target, int numFilters,
+void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads.size[0];
-    int imgPixels = outGrads.size[1] / numFilters;
+    int numImages = outGrads->size[0];
+    int imgPixels = outGrads->size[1] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(sizeF > 0 && sizeF <= numFilters);
-    assert(outGrads.size[1] == numFilters * imgPixels);
+    assert(outGrads->size[1] == numFilters * imgPixels);
 
     assert(THCudaTensor_isContiguous(outGrads));
 
@@ -2919,7 +2919,7 @@ void convResponseNormCrossMapUndo(NVMatrix& outGrads, NVMatrix& inputs, NVMatrix
     getLastCudaError("convResponseNormCrossMapUndo: kernel execution failed");
 }
 
-void convResponseNormCrossMap(NVMatrix& images, NVMatrix& target, int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
     convContrastNormCrossMap(images, images, target, numFilters, sizeF, addScale, powScale, minDiv, blocked);
 }
 
@@ -2928,6 +2928,6 @@ void convResponseNormCrossMap(NVMatrix& images, NVMatrix& target, int numFilters
  * denoms:      (numFilters, imgPixels, numImages) (out)
  * target:      (numFilters, imgPixels, numImages) (out)
  */
-void convResponseNormCrossMap(NVMatrix& images, NVMatrix& target, int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
     convContrastNormCrossMap(images, images, target, numFilters, sizeF, addScale, powScale, 1, blocked);
 }

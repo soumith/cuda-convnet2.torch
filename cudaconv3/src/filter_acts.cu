@@ -1222,10 +1222,10 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
                    int numImgColors, int numGroups,
                    float scaleTargets, float scaleOutput, bool conv) {
     int numFilterColors = numImgColors / numGroups;      
-    int numFilters = filters.size[0];
+    int numFilters = filters->size[0];
     int numModules = numModulesY * numModulesX;
-    int numImages = images.size[0];
-    int imgPixels = images.size[1]/numImgColors;
+    int numImages = images->size[0];
+    int imgPixels = images->size[1]/numImgColors;
     int imgSizeX = imgPixels / imgSizeY;
     int filterModuleMult = conv ? 1 : numModules;
     
@@ -1234,18 +1234,18 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     assert(numFilters % (16 * numGroups) == 0);
     assert(numImgColors % numGroups == 0);
     //images.printShape("images");
-    //printf("rows: %d, pixels: %d, colors: %d\n", images.size[1], imgPixels, numImgColors);
+    //printf("rows: %d, pixels: %d, colors: %d\n", images->size[1], imgPixels, numImgColors);
     //images.printShape("images");
-    assert(images.size[1] == imgPixels * numImgColors);
+    assert(images->size[1] == imgPixels * numImgColors);
     assert(imgSizeY * imgSizeX == imgPixels);
     int numFiltersPerGroup = numFilters / numGroups;
 
     int imgStride = images.getStride(); // images does not need to be a contiguous matrix
 
-    int filterPixels = filters.size[1] / (filterModuleMult * numFilterColors);
+    int filterPixels = filters->size[1] / (filterModuleMult * numFilterColors);
     int filterSize = int(sqrt(filterPixels));
     assert(filterSize * filterSize == filterPixels);
-    assert(filters.size[1] == filterModuleMult * numFilterColors * filterPixels);
+    assert(filters->size[1] == filterModuleMult * numFilterColors * filterPixels);
 
     // These routines don't handle the case when only part of the image is visited in the convolution
     assert(paddingStart <= 0);
@@ -1275,8 +1275,8 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     if (scaleTargets == 0) {
         targets.resize(numFilters * numModules, numImages);
     } else {
-        assert(targets.size[1] == numFilters * numModules);
-        assert(targets.size[0] == numImages);
+        assert(targets->size[1] == numFilters * numModules);
+        assert(targets->size[0] == numImages);
     }  
 
     // Auto-generated calling code...

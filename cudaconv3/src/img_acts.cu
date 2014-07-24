@@ -1191,11 +1191,11 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
               int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
               float scaleTargets, float scaleOutput, bool conv) {
     int numFilterColors = numImgColors / numGroups;
-    int numImages = hidActs.size[0];
-    int numFilters = filters.size[0];
-    int numModules = hidActs.size[1] / numFilters;
+    int numImages = hidActs->size[0];
+    int numFilters = filters->size[0];
+    int numModules = hidActs->size[1] / numFilters;
     int filterModuleMult = conv ? 1 : numModules;
-    int filterPixels = filters.size[1] / (filterModuleMult * numFilterColors);
+    int filterPixels = filters->size[1] / (filterModuleMult * numFilterColors);
     int filterSize = sqrt(filterPixels);
     int imgPixels = imgSizeY * imgSizeX;
     int numModulesX = numModules / numModulesY;
@@ -1206,8 +1206,8 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
     assert(numGroups == 1 || numFilterColors % 4 == 0);
 
     assert(filterPixels == filterSize * filterSize);
-    assert(hidActs.size[1] == numModules * numFilters);
-    assert(filters.size[1] == filterModuleMult * numFilterColors * filterPixels);
+    assert(hidActs->size[1] == numModules * numFilters);
+    assert(filters->size[1] == filterModuleMult * numFilterColors * filterPixels);
     assert(numModules == numModulesY * numModulesX);
 
     assert(THCudaTensor_isContiguous(hidActs));
@@ -1253,8 +1253,8 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
     if (scaleTargets == 0) { // do not scale or use targets matrix
       THCudaTensor_resize2d(targets, numImgColors*imgPixels, numImages);
     } else {
-        assert(targets.size[1] == numImgColors * imgPixels);
-        assert(targets.size[0] == numImages);
+        assert(targets->size[1] == numImgColors * imgPixels);
+        assert(targets->size[0] == numImages);
     }
     const bool scale = scaleTargets != 0;
 //    cudaFuncSetCacheConfig(conv_img_acts_manycolor_preloadfh_ty_4_tx_32_c_12_ff_16_fh_16< 4, 32, 4, 12, 16, 16, false, false, true >, cudaFuncCachePreferShared);
