@@ -68,7 +68,7 @@ OBJDIR := ./obj/$(DBG)
 
 ########## USER STUFF ###########
 LDFLAGS   		+= -lcublas
-INCLUDES      	:= -I$(CUDA_INC_PATH) -I $(CUDA_SDK_PATH)/common/inc -I./include -I /home/fatbox/local/include/TH -I /home/fatbox/local/include/THC
+INCLUDES      	:= -I$(CUDA_INC_PATH) -I $(CUDA_SDK_PATH)/common/inc -I./include -I $(TH_INC_PATH)/TH -I $(TH_INC_PATH)/THC
 
 CUFILES	:= $(shell find . -name "*.cu")
 CU_DEPS	:= $(shell find . -name "*.cuh")
