@@ -16,7 +16,7 @@ Kept as a separate repo because of the License, and because the codebase is not 
 | .isTrans()          | N/A
 | .getDevData()       | THCudaTensor_data()
 | .resize()           | THCudaTensor_resizeXd where X = dims
-| .getTextureObject() | N/A
+| .getTextureObject() | THCudaTensor_getTextureObject
 | .isContiguous       | THCudaTensor_isContiguous
 | .isSameDims         | THCudaTensor_isSameSizeAs
 | .apply              | THCudaTensor_fill()
