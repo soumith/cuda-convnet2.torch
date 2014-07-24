@@ -2,11 +2,10 @@ cuda-convnet2.torch
 ===================
 
 Torch7 bindings for cuda-convnet2 kernels!
+Kept as a separate repo because of the License, and because the codebase is not small.
 
 
-NVMatrix to THTensor cheatsheet
-===============================
-
+###NVMatrix to THTensor cheatsheet
 | NVMatrix            | THCudaTensor |
 | --------------------|:-------------:|
 | .getNumCols()       | .size[0]
@@ -17,7 +16,7 @@ NVMatrix to THTensor cheatsheet
 | .isTrans()          | N/A
 | .getDevData()       | THCudaTensor_data()
 | .resize()           | THCudaTensor_resizeXd where X = dims
-| .getTextureObject() | N/A
+| .getTextureObject() | THCudaTensor_getTextureObject
 | .isContiguous       | THCudaTensor_isContiguous
 | .isSameDims         | THCudaTensor_isSameSizeAs
 | .apply              | THCudaTensor_fill()
