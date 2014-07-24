@@ -17,7 +17,6 @@
 #include <iostream>
 #include <assert.h>
 #include "../../nvmatrix/include/nvmatrix_kernels.cuh"
-#include "../../nvmatrix/include/nvmatrix.cuh"
 #include "../include/conv_util.cuh"
 
 using namespace std;
@@ -2161,7 +2160,7 @@ void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
     int numFilters = avgGrads->size[1] / outputs;
     assert(avgGrads->size[1] == numFilters * outputs);
 
-    assert(THCudaTensor_isContiguous(avgGrads)));
+    assert(THCudaTensor_isContiguous(avgGrads));
     assert(numFilters % 16 == 0);
 //    assert(numImages % 128 == 0);
     

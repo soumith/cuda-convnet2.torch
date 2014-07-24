@@ -2102,7 +2102,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     bool checkCaseBounds = numImages % preloadCases != 0;
     bool scale = scaleTargets != 0;
     if (!scale) { 
-      THCudaTensor_resize(targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
+      THCudaTensor_resize2d(targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
     } else {
         assert(targets->size[1] == outputModuleChunks * numFilterColors*filterPixels);
         assert(targets->size[0] == numFilters);

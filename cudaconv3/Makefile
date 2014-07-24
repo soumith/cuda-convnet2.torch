@@ -67,8 +67,8 @@ TARGETDIR := ./bin/$(DBG)
 OBJDIR := ./obj/$(DBG)
 
 ########## USER STUFF ###########
-LDFLAGS   		+= -L../util -lutilpy -L../nvmatrix -lnvmatrix -lcublas
-INCLUDES      	:= -I$(CUDA_INC_PATH) -I $(CUDA_SDK_PATH)/common/inc -I./include
+LDFLAGS   		+= -lcublas
+INCLUDES      	:= -I$(CUDA_INC_PATH) -I $(CUDA_SDK_PATH)/common/inc -I./include -I /home/fatbox/local/include/TH -I /home/fatbox/local/include/THC
 
 CUFILES	:= $(shell find . -name "*.cu")
 CU_DEPS	:= $(shell find . -name "*.cuh")

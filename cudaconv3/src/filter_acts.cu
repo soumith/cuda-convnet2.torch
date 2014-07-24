@@ -15,6 +15,7 @@
  */
 
 #include "../include/cudaconv2.cuh"
+#include "../../nvmatrix/include/nvmatrix_kernels.cuh"
 
 
 __device__ __forceinline__ void filterActs_YxX_color_preload_ty_4_tx_32_f_16_cc_3_setImgCoords(int fPidx, int imgLoadModPosY, int imgLoadModPosX,
@@ -1240,7 +1241,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     assert(imgSizeY * imgSizeX == imgPixels);
     int numFiltersPerGroup = numFilters / numGroups;
 
-    int imgStride = images.getStride(); // images does not need to be a contiguous matrix
+    int imgStride = images->stride[0]; // images does not need to be a contiguous matrix
 
     int filterPixels = filters->size[1] / (filterModuleMult * numFilterColors);
     int filterSize = int(sqrt(filterPixels));
@@ -1273,7 +1274,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     bool checkImgBounds = numImages % (threads.x*imgsPerThread) != 0;
     bool scale = scaleTargets != 0;
     if (scaleTargets == 0) {
-        targets.resize(numFilters * numModules, numImages);
+      THCudaTensor_resize2d(targets, numFilters * numModules, numImages);
     } else {
         assert(targets->size[1] == numFilters * numModules);
         assert(targets->size[0] == numImages);
@@ -1290,7 +1291,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
                     if (numFiltersPerGroup % 128 == 0) {
                       if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false >, cudaFuncCachePreferL1);
-                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(images.getTextureObject(), filters.getTextureObject(), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
+                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
                         } else {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, false, false >, cudaFuncCachePreferL1);
                             filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
@@ -1299,7 +1300,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
                     else if (numFiltersPerGroup % 64 == 0) {
                         if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false >, cudaFuncCachePreferL1);
-                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(images.getTextureObject(), filters.getTextureObject(), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
+                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
                         } else {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, false, false >, cudaFuncCachePreferL1);
                             filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, false, false > <<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
@@ -1686,7 +1687,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
                     if (numFiltersPerGroup % 128 == 0) {
                         if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false >, cudaFuncCachePreferL1);
-                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(images.getTextureObject(), filters.getTextureObject(), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
+                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
                         } else {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, true, false >, cudaFuncCachePreferL1);
                             filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
@@ -1695,7 +1696,7 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
                     else if (numFiltersPerGroup % 64 == 0) {
                         if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false >, cudaFuncCachePreferL1);
-                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(images.getTextureObject(), filters.getTextureObject(), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
+                            filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4_tex < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);
                         } else {
                             cudaFuncSetCacheConfig(filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, true, false >, cudaFuncCachePreferL1);
                             filterActs_YxX_sparse2_preload_ty_4_tx_32_i_4_f_16_c_4 < 4, 32, 4, 16, 4, true, false > <<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(filters), THCudaTensor_data(targets), numImages, numFilters, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, numModulesY, numModulesX, imgStride, numImgColors, numGroups, scaleTargets, scaleOutput, conv);

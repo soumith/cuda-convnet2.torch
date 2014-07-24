@@ -17,6 +17,16 @@
 #ifndef CONV_UTIL_CUH
 #define	CONV_UTIL_CUH
 
+#include <TH.h>
+#include <THC.h>
+
+#include <assert.h>
+#include <helper_cuda.h>
+
+#ifndef DIVUP
+#define DIVUP(a,b) (((a) + (b) - 1) / (b))
+#endif
+
 #ifndef MIN
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #endif
@@ -262,10 +272,10 @@ __global__ void kPoolCrossMap(float* imgs, float* target, const int imgSize,
 template<class Pooler>
 void convPoolCrossMap(THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
                       const int numOutputs, const int stride, const int imgSize, Pooler pooler) {
-    int numImages = images.size[0];
+    int numImages = images->size[0];
     int imgPixels = imgSize * imgSize;
-    int numFilters = images.size[1] / imgPixels;
-    assert(images.size[1] == numFilters * imgPixels);
+    int numFilters = images->size[1] / imgPixels;
+    assert(images->size[1] == numFilters * imgPixels);
 
     assert(THCudaTensor_isContiguous(images));
 //    assert(numFilters % 4 == 0);
@@ -444,9 +454,9 @@ __global__ void kLocalPool2(float* imgs, float* target, const int imgSize, const
 template<class Pooler>
 void convLocalPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                    int subsX, int startX, int strideX, int outputsX, Pooler pooler) {
-    int numImages = images.size[0];
-    int imgPixels = images.size[1] / numFilters;
-    assert(images.size[1] == numFilters * imgPixels);
+    int numImages = images->size[0];
+    int imgPixels = images->size[1] / numFilters;
+    assert(images->size[1] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     
