@@ -19,7 +19,7 @@ NVMatrix to THTensor cheatsheet
 | .resize()           | THCudaTensor_resizeXd where X = dims
 | .getTextureObject() | N/A
 | .isContiguous       | THCudaTensor_isContiguous
-| .isSameDims         | ?
+| .isSameDims         | THCudaTensor_isSameSizeAs
 | .apply              | THCudaTensor_fill()
 
 * check contiguity of all tensors, if not, make contiguous
