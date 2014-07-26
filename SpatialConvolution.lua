@@ -14,14 +14,14 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    self.dH = dH
    self.padding = padding
 
-   self.weight = torch.Tensor(nInputPlane, kH, kH, nOutputPlane)
+   self.weight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
    self.bias = torch.Tensor(nOutputPlane)
-   self.gradWeight = torch.Tensor(nInputPlane, kH, kH, nOutputPlane)
+   self.gradWeight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
    self.gradBias = torch.Tensor(nOutputPlane)
 
    self.gradInput = torch.Tensor()
    self.output = torch.Tensor()
-   
+
    self:reset()
    self:cuda()
 end
@@ -44,12 +44,18 @@ end
 
 function SpatialConvolution:updateOutput(input)
    typecheck(input)
-   local oH = (self.padding * 2 + input:size(2) - self.kH) / self.dH + 1;
-   C['convFilterActs'](input:cdata(), self.weight:cdata(), self.output:cdata(), 
+   local nBatch = input:size(4)
+   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
+   local inputCollapsed = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
+   self.output:resize(self.nOutputPlane*oH*oH, nBatch);
+
+   C['convFilterActs'](inputCollapsed:cdata(), 
+                       self.weight:cdata(), 
+                       self.output:cdata(), 
                        input:size(2), oH, oH, 
                           -self.padding, self.dH, 
-                       input:size(1), 1);
-   return self.output
+                       self.nInputPlane, 1);
+   return self.output:view(self.nOutputPlane, oH, oH, nBatch)
 end
 
 function SpatialConvolution:updateGradInput(input, gradOutput)

@@ -22,6 +22,7 @@ SET(src
 FILE(GLOB luasrc *.lua)
 
 CUDA_ADD_LIBRARY(ccn2 MODULE ${src})
+TARGET_LINK_LIBRARIES(ccn2 THC TH)
 
 ### Torch packages supposes libraries prefix is "lib"
 SET_TARGET_PROPERTIES(ccn2 PROPERTIES
