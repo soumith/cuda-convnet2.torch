@@ -8,8 +8,8 @@ Kept as a separate repo because of the License, and because the codebase is not 
 ###NVMatrix to THTensor cheatsheet
 | NVMatrix            | THCudaTensor |
 | --------------------|:-------------:|
-| .getNumCols()       | .size[0]
-| .getNumRows()       | .size[1]
+| .getNumCols()       | .size[1]
+| .getNumRows()       | .size[0]
 | .getNumElements()   | THCudaTensor_nElement()
 | .getNumDataBytes()  | THCudaTensor_nElement() * 4
 | .getStride()        | .stride[0] 
