@@ -71,10 +71,10 @@ __global__ void kReflectH(float * imgs, float * targets,
  * targets: (numColors, imgSize, imgSize, numCases)
  */
 void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgSize) {
-    int numCases = images->size[0]; 
+    int numCases = images->size[1]; 
     int imgPixels = imgSize * imgSize;
-    int numColors = images->size[1] / imgPixels;
-    assert(numColors * imgPixels == images->size[1]);
+    int numColors = images->size[0] / imgPixels;
+    assert(numColors * imgPixels == images->size[0]);
     assert(numColors > 0 && numColors <= 3);
     
     THCudaTensor_resizeAs(targets, images);
@@ -201,9 +201,9 @@ __global__ void kNormalizeLCWeights(float* weights, const uint numFilters, const
  * weights: (numModules, numColors, filterPixels, numFilters)
  */
 void normalizeLocalWeights(THCudaTensor* weights, int numModules, float norm) {
-    int numFilters = weights->size[0];
-    int weightsPerFilter = weights->size[1] / numModules;
-    assert(numModules * weightsPerFilter == weights->size[1]);
+    int numFilters = weights->size[1];
+    int weightsPerFilter = weights->size[0] / numModules;
+    assert(numModules * weightsPerFilter == weights->size[0]);
     
     assert(THCudaTensor_isContiguous(weights));
     assert(numFilters % 16 == 0);
@@ -659,7 +659,7 @@ __global__ void kBedOfNails(float* imgs, float* target, const int imgSize, const
  */
 void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels, int imgSize, int startX, int strideX,
                      bool reverse, float scaleTargets, float scaleOutput) {
-    int numImages = reverse ? target->size[0] : images->size[0];
+    int numImages = reverse ? target->size[1] : images->size[1];
     int imgPixels = imgSize * imgSize;
 
     assert(THCudaTensor_isContiguous(images));
@@ -669,9 +669,9 @@ void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels
     int outputsX = DIVUP(imgSize, strideX);
     int outputs = outputsX * outputsX;
     if (reverse) {
-        assert(target->size[1] == numChannels * outputs);
+        assert(target->size[0] == numChannels * outputs);
     } else  {
-        assert(images->size[1] == numChannels * imgPixels);
+        assert(images->size[0] == numChannels * imgPixels);
     }
     
     if (scaleTargets == 0) {
@@ -683,11 +683,11 @@ void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels
         }
     } else {
         if (reverse) {
-            assert(images->size[1] == numChannels * outputs);
-            assert(images->size[0] == numImages);
+            assert(images->size[0] == numChannels * outputs);
+            assert(images->size[1] == numImages);
         } else {
-            assert(target->size[1] == numChannels * outputs);
-            assert(target->size[0] == numImages);
+            assert(target->size[0] == numChannels * outputs);
+            assert(target->size[1] == numImages);
         }
     }
     
@@ -797,16 +797,16 @@ void convBedOfNailsUndo(THCudaTensor* actsGrad, THCudaTensor* target, int numCha
  */
 void convGaussianBlur(THCudaTensor* images, THCudaTensor* filter, THCudaTensor* target, bool horiz, int numChannels,
                       float scaleTargets, float scaleOutputs) {
-    int numImages = images->size[0];
-    int radius = filter->size[0] / 2;
-    int imgPixels = images->size[1] / numChannels;
+    int numImages = images->size[1];
+    int radius = filter->size[1] / 2;
+    int imgPixels = images->size[0] / numChannels;
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgPixels == imgSize * imgSize);
     assert(radius >= 1 && radius <= 4);
     assert(imgSize >= 2 * radius + 1);
-    assert(filter->size[1] == 1);
-    assert(images->size[1] == numChannels * imgPixels);
+    assert(filter->size[0] == 1);
+    assert(images->size[0] == numChannels * imgPixels);
     assert(THCudaTensor_isContiguous(target));
     if (scaleTargets == 0) {
       THCudaTensor_resizeAs(target, images);
@@ -1293,16 +1293,16 @@ __global__ void kCrossMapMaxPoolUndo(float* imgs, float* maxGrads, float* maxAct
 void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                              const int imgSize, const int startF, const int poolSize,
                              const int stride, const float scaleTargets, const float scaleOutputs) {
-    int numImages = images->size[0];
+    int numImages = images->size[1];
     int imgPixels = imgSize * imgSize;
-    int numFilters = images->size[1] / imgPixels;
-    int numOutputs = maxActs->size[1] / imgPixels;
-    assert(images->size[1] == numFilters * imgPixels);
-    assert(maxGrads->size[1] == numOutputs * imgPixels);
-    assert(maxGrads->size[0] == numImages);
+    int numFilters = images->size[0] / imgPixels;
+    int numOutputs = maxActs->size[0] / imgPixels;
+    assert(images->size[0] == numFilters * imgPixels);
+    assert(maxGrads->size[0] == numOutputs * imgPixels);
+    assert(maxGrads->size[1] == numImages);
     assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
 
-    assert(images->size[1] == numFilters * imgPixels);
+    assert(images->size[0] == numFilters * imgPixels);
 
     assert(THCudaTensor_isContiguous(images));
     assert(THCudaTensor_isContiguous(maxGrads));
@@ -2059,15 +2059,15 @@ void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, float scaleTargets, float scaleOutput) {
     int outputs = outputsX * outputsX;
-    int numImages = images->size[0];
-    int numFilters = maxGrads->size[1] / outputs;
-    int imgPixels = images->size[1] / numFilters;
-    assert(images->size[1] == numFilters * imgPixels);
+    int numImages = images->size[1];
+    int numFilters = maxGrads->size[0] / outputs;
+    int imgPixels = images->size[0] / numFilters;
+    assert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     
     assert(imgSize * imgSize == imgPixels);
-    assert(maxGrads->size[1] == numFilters * outputs);
-    assert(maxGrads->size[0] == numImages);
+    assert(maxGrads->size[0] == numFilters * outputs);
+    assert(maxGrads->size[1] == numImages);
     assert(THCudaTensor_isContiguous(images));
     assert(THCudaTensor_isContiguous(maxGrads));
     assert(THCudaTensor_isContiguous(maxActs));
@@ -2153,12 +2153,12 @@ void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target, int subsX, i
 void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize,
                       float scaleTargets, float scaleOutput) {
-    int numImages = avgGrads->size[0];
+    int numImages = avgGrads->size[1];
 
     int outputs = outputsX * outputsX;
     int imgPixels = imgSize * imgSize;
-    int numFilters = avgGrads->size[1] / outputs;
-    assert(avgGrads->size[1] == numFilters * outputs);
+    int numFilters = avgGrads->size[0] / outputs;
+    assert(avgGrads->size[0] == numFilters * outputs);
 
     assert(THCudaTensor_isContiguous(avgGrads));
     assert(numFilters % 16 == 0);
@@ -2254,9 +2254,9 @@ void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* 
  * target:      (numFilters, imgPixels, numImages) (out)
  */
 void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
-    int numImages = images->size[0];
-    int imgPixels = images->size[1] / numFilters;
-    assert(images->size[1] == numFilters * imgPixels);
+    int numImages = images->size[1];
+    int imgPixels = images->size[0] / numFilters;
+    assert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
@@ -2407,13 +2407,13 @@ void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
  */
 void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads->size[0];
-    int imgPixels = outGrads->size[1] / numFilters;
+    int numImages = outGrads->size[1];
+    int imgPixels = outGrads->size[0] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
 
-    assert(outGrads->size[1] == numFilters * imgPixels);
+    assert(outGrads->size[0] == numFilters * imgPixels);
 
     assert(THCudaTensor_isSameSizeAs(denoms, outGrads));
     assert(THCudaTensor_isSameSizeAs(acts, denoms));
@@ -2567,9 +2567,9 @@ void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
 void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale) {
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
-    int numChannels = images->size[1] / imgPixels;
-    int numImages = images->size[0];
-    assert(images->size[1] == numChannels * imgPixels);
+    int numChannels = images->size[0] / imgPixels;
+    int numImages = images->size[1];
+    assert(images->size[0] == numChannels * imgPixels);
     
     THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2616,9 +2616,9 @@ void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize,
  * target:      (3, imgPixels, numImages)
  */
 void convRGBToYUV(THCudaTensor* images, THCudaTensor* target) {
-    int imgPixels = images->size[1] / 3;
-    int numImages = images->size[0];
-    assert(images->size[1] == 3 * imgPixels);
+    int imgPixels = images->size[0] / 3;
+    int numImages = images->size[1];
+    assert(images->size[0] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2659,9 +2659,9 @@ void convRGBToYUV(THCudaTensor* images, THCudaTensor* target) {
  * target:      (3, imgPixels, numImages)
  */
 void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center) {
-    int imgPixels = images->size[1] / 3;
-    int numImages = images->size[0];
-    assert(images->size[1] == 3 * imgPixels);
+    int imgPixels = images->size[0] / 3;
+    int numImages = images->size[1];
+    assert(images->size[0] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
     assert(THCudaTensor_isContiguous(target));
@@ -2733,12 +2733,12 @@ void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center) {
  * target:  (numChannels, tgtPixels, numImages)
  */
 void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize, int startY, int startX) {
-    int numImages = imgs->size[0];
+    int numImages = imgs->size[1];
     int imgPixels = imgSize * imgSize;
     int tgtPixels = tgtSize * tgtSize;
 
-    int numChannels = imgs->size[1] / imgPixels;
-    assert(imgs->size[1] == imgPixels * numChannels);
+    int numChannels = imgs->size[0] / imgPixels;
+    assert(imgs->size[0] == imgPixels * numChannels);
     assert(imgPixels == imgSize * imgSize);
     assert(imgSize - startY >= tgtSize);
     assert(imgSize - startX >= tgtSize);
@@ -2783,9 +2783,9 @@ void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize
  */
 void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* target,
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
-    int numImages = images->size[0];
-    int imgPixels = images->size[1] / numFilters;
-    assert(images->size[1] == numFilters * imgPixels);
+    int numImages = images->size[1];
+    int imgPixels = images->size[0] / numFilters;
+    assert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
@@ -2841,13 +2841,13 @@ void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THC
  */
 void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput) {
-    int numImages = outGrads->size[0];
-    int imgPixels = outGrads->size[1] / numFilters;
+    int numImages = outGrads->size[1];
+    int imgPixels = outGrads->size[0] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
     assert(imgSize * imgSize == imgPixels);
     assert(sizeF > 0 && sizeF <= numFilters);
-    assert(outGrads->size[1] == numFilters * imgPixels);
+    assert(outGrads->size[0] == numFilters * imgPixels);
 
     assert(THCudaTensor_isContiguous(outGrads));
 

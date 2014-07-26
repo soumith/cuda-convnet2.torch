@@ -2011,11 +2011,11 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
         int numGroups, int sumWidth, float scaleTargets, float scaleOutput) {
     int numFilterColors = numImgColors / numGroups;
     int imgStride = images->stride[0];
-    int numImages = images->size[0];
-    int imgPixels = images->size[1] / numImgColors;
+    int numImages = images->size[1];
+    int imgPixels = images->size[0] / numImgColors;
     int imgSizeX = imgPixels / imgSizeY;
     int numModules = numModulesY * numModulesX;
-    int numFilters = hidActs->size[1] / numModules;
+    int numFilters = hidActs->size[0] / numModules;
     int numFiltersPerGroup = numFilters / numGroups;
     
     assert(numImgColors % numGroups == 0);
@@ -2023,7 +2023,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     assert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 16 == 0)));
     assert(numGroups == 1 || numFilterColors % 16 == 0);
     assert(imgSizeY * imgSizeX == imgPixels);
-    assert(images->size[1] == imgPixels * numImgColors);
+    assert(images->size[0] == imgPixels * numImgColors);
 
     int filterPixels = filterSize * filterSize;
     int outputModuleChunksX = DIVUP(numModulesX, sumWidth);
@@ -2032,7 +2032,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
 //    partialSum = partialSum == 0 ? numModules : partialSum;
 
 //    assert(numModules % partialSum == 0);
-    assert(hidActs->size[0] == numImages);
+    assert(hidActs->size[1] == numImages);
 
     // These routines don't handle the case when only part of the image is visited in the convolution
     assert(paddingStart <= 0);
@@ -2040,7 +2040,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     assert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
     assert(moduleStride <= filterSize);
     
-    assert(numModules * numFilters == hidActs->size[1]);
+    assert(numModules * numFilters == hidActs->size[0]);
 
     assert(THCudaTensor_isContiguous(hidActs));
 
@@ -2104,8 +2104,8 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     if (!scale) { 
       THCudaTensor_resize2d(targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
     } else {
-        assert(targets->size[1] == outputModuleChunks * numFilterColors*filterPixels);
-        assert(targets->size[0] == numFilters);
+        assert(targets->size[0] == outputModuleChunks * numFilterColors*filterPixels);
+        assert(targets->size[1] == numFilters);
     }
 
     if (scale == false) {
