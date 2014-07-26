@@ -20,12 +20,14 @@
 #include <helper_cuda.h>        // helper functions CUDA error checking and initialization
 #include "conv_util.cuh"
 
+extern "C" {
+
 enum FILTER_OUTPUT_ORDER {MODULE_FILTER_IMAGE, FILTER_MODULE_IMAGE};
 
 void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                     int numImgColors, int numGroups);
-void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void convFilterActsSt(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                    int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                    int numImgColors, int numGroups,
                    float scaleTargets, float scaleOutput);
@@ -33,27 +35,27 @@ void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* t
 void localFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups);
-void localFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void localFilterActsSt(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups,
                      float scaleTargets, float scaleOutput);
 
 void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void convImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                  float scaleTargets, float scaleOutput);
 
 void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void localImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                   float scaleTargets, float scaleOutput);
 
 void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                     int moduleStride, int numImgColors, int numGroups, int sumWidth);
-void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void convWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                     int numImgColors, int numGroups, int sumWidth,
                     float scaleTargets, float scaleOutput);
@@ -62,9 +64,9 @@ void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* 
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                      int moduleStride, int numImgColors, int numGroups);
 
-void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups, float scaleTargets, float scaleOutput);
-
+}
 #endif	/* COMMON_CUH */
 

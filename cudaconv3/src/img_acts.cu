@@ -2310,26 +2310,24 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
     getLastCudaError("imgActs: kernel execution failed");
 }
 
-
 void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
-                    int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
-    _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, 0, 1, true);
+                 int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
+  _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, 0, 1, true);
 }
 
-void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
-                    int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
-                    float scaleTargets, float scaleOutput) {
-    _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, scaleTargets, scaleOutput, true);
+void convImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
+                   float scaleTargets, float scaleOutput) {
+  _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, scaleTargets, scaleOutput, true);
 }
 
 void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
-                    int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
-    _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, 0, 1, false);
+                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
+  _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, 0, 1, false);
 }
 
-void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void localImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                     int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                     float scaleTargets, float scaleOutput) {
-    _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, scaleTargets, scaleOutput, false);
+  _imgActs(hidActs, filters, targets, imgSizeY, imgSizeX, numModulesY, paddingStart, moduleStride, numImgColors, numGroups, scaleTargets, scaleOutput, false);
 }
-

@@ -2644,24 +2644,24 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
 }
 
 void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
-                       int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum) {
-    _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, 0, 1);
+                    int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum) {
+  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, 0, 1);
 }
 
-void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
-                    int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum,
-                    float scaleTargets, float scaleOutput) {
-    _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, scaleTargets, scaleOutput);
-}
-
-void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
-                       int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
-    _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1, 0, 1);
+void convWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum,
+                      float scaleTargets, float scaleOutput) {
+  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, scaleTargets, scaleOutput);
 }
 
 void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
-                    int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
-                    int numImgColors, int numGroups, float scaleTargets, float scaleOutput) {
-    _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1,
-                scaleTargets, scaleOutput);
+                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
+  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1, 0, 1);
+}
+
+void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+                       int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
+                       int numImgColors, int numGroups, float scaleTargets, float scaleOutput) {
+  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1,
+              scaleTargets, scaleOutput);
 }
