@@ -23,6 +23,6 @@ Kept as a separate repo because of the License, and because the codebase is not 
 
 * check contiguity of all tensors, if not, make contiguous
 * ignore/remove assertions (because you are doing contiguous checks anyways)
-* harmonize getTextureObject
+* harmonize getTextureObject. destroy all the texture objects after usage, treat them like pointers. NVMatrix does it in it's destructor, but since the object is not a member of the THCudaTensor structure, we have to destroy it manually after use.
 * double-check places where strides are allowed (especially conv)
 Agg = ?, Agg.getBaseValue, Agg.output(.., ..)
