@@ -1,5 +1,4 @@
 local ffi = require 'ffi'
-local ccn = require 'ccn.env'
 
 ffi.cdef[[
 void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
@@ -48,4 +47,4 @@ void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor
                      int numImgColors, int numGroups, float scaleTargets, float scaleOutput);
 ]]
 
-ccn.C = ffi.load(package.searchpath('libcudaconv', package.cpath))
+ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))

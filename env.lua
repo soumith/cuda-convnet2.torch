@@ -1,2 +1,0 @@
-local ccn = {}
-return ccn

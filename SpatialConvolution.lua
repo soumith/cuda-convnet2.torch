@@ -1,5 +1,4 @@
-local ccn = require 'ccn.env'
-local C = ccn.C
+local C = ccn2.C
 
 local SpatialConvolution, parent = torch.class('ccn2.SpatialConvolution', 'nn.Module')
 
@@ -17,7 +16,7 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
 
    self.weight = torch.Tensor(nInputPlane, kH, kH, nOutputPlane)
    self.bias = torch.Tensor(nOutputPlane)
-   self.gradWeight = torch.Tensor(nInputPlane, kH, kW, nOutputPlane)
+   self.gradWeight = torch.Tensor(nInputPlane, kH, kH, nOutputPlane)
    self.gradBias = torch.Tensor(nOutputPlane)
 
    self.gradInput = torch.Tensor()
