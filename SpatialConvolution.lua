@@ -46,15 +46,12 @@ function SpatialConvolution:updateOutput(input)
    typecheck(input)
    local nBatch = input:size(4)
    local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
-   local inputCollapsed = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
+   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
    self.output:resize(self.nOutputPlane*oH*oH, nBatch);
 
-   C['convFilterActs'](inputCollapsed:cdata(), 
-                       self.weight:cdata(), 
-                       self.output:cdata(), 
+   C['convFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(), 
                        input:size(2), oH, oH, 
-                          -self.padding, self.dH, 
-                       self.nInputPlane, 1);
+                          -self.padding, self.dH, self.nInputPlane, 1);
    return self.output:view(self.nOutputPlane, oH, oH, nBatch)
 end
 
