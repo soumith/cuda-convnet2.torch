@@ -2113,12 +2113,20 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3)  {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false >, cudaFuncCachePreferShared);
@@ -2131,8 +2139,12 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false >, cudaFuncCachePreferShared);
@@ -2186,12 +2198,20 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, false >, cudaFuncCachePreferShared);
@@ -2378,12 +2398,20 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3) {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true >, cudaFuncCachePreferShared);
@@ -2396,8 +2424,12 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true >, cudaFuncCachePreferShared);
@@ -2452,12 +2484,20 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
+                      cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+                      cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                      checkCudaErrors(cudaDestroyTextureObject(texImages));
+                      checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, false >, cudaFuncCachePreferShared);
