@@ -8,6 +8,13 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    dH = dH or 1 -- stride
    padding = padding or 0
 
+   if not (nInputPlane >= 1 and (nInputPlane <= 3 or math.fmod(nInputPlane, 4) == 0)) then
+      error('Assertion failed: [(nInputPlane >= 1 and (nInputPlane <= 3 or math.fmod(nInputPlane, 4)))]. Number of input channels has to be 1, 2, 3 or a multiple of 4')
+   end
+   if math.fmod(nOutputPlane, 16) ~= 0 then
+      error('Assertion failed: [math.fmod(nOutputPlane, 16) == 0]. Number of output planes has to be a multiple of 16.')
+   end
+
    self.nInputPlane = nInputPlane
    self.nOutputPlane = nOutputPlane
    self.kH = kH
@@ -36,33 +43,33 @@ function SpatialConvolution:reset(stdv)
    self.bias:uniform(-stdv, stdv)   
 end
 
-local function typecheck(i)
-   if torch.type(i) ~= 'torch.CudaTensor' then 
-      error('Input is expected to be torch.CudaTensor') 
-   end
-end
-
 function SpatialConvolution:updateOutput(input)
-   typecheck(input)
+   ccn2.typecheck(input)
+   ccn2.inputcheck(input)
    local nBatch = input:size(4)
    local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
    self.output:resize(self.nOutputPlane*oH*oH, nBatch);
-
+   -- do convolution
    C['convFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(), 
                        input:size(2), oH, oH, 
                           -self.padding, self.dH, self.nInputPlane, 1);
+   -- add bias
+   self.output = self.output:view(self.nOutputPlane, oH*oH*nBatch)
+   -- for i=1,self.nOutputPlane do
+   --    --self.output:add(self.bias[i])
+   -- end
    return self.output:view(self.nOutputPlane, oH, oH, nBatch)
 end
 
 function SpatialConvolution:updateGradInput(input, gradOutput)
-   typecheck(input); typecheck(gradOutput);
+   ccn2.typecheck(input); ccn2.typecheck(gradOutput);
    if self.gradInput then
       return input.nn.SpatialConvolution_updateGradInput(self, input, gradOutput)
    end
 end
 
 function SpatialConvolution:accGradParameters(input, gradOutput, scale)
-   typecheck(input); typecheck(gradOutput);
+   ccn2.typecheck(input); ccn2.typecheck(gradOutput);
    return input.nn.SpatialConvolution_accGradParameters(self, input, gradOutput, scale)
 end
