@@ -48,7 +48,8 @@ function SpatialConvolution:updateOutput(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
    local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
-   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
+   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
+                             input:size(4))
    self.output:resize(self.nOutputPlane*oH*oH, nBatch);
    -- do convolution
    C['convFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(), 
@@ -56,9 +57,7 @@ function SpatialConvolution:updateOutput(input)
                           -self.padding, self.dH, self.nInputPlane, 1);
    -- add bias
    self.output = self.output:view(self.nOutputPlane, oH*oH*nBatch)
-   -- for i=1,self.nOutputPlane do
-   --    --self.output:add(self.bias[i])
-   -- end
+   C['addBias'](self.output:cdata(), self.bias:cdata());
    return self.output:view(self.nOutputPlane, oH, oH, nBatch)
 end
 

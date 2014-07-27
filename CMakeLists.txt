@@ -17,7 +17,8 @@ SET(src
   cudaconv3/src/conv_util.cu 
   cudaconv3/src/filter_acts.cu 
   cudaconv3/src/img_acts.cu 
-  cudaconv3/src/weight_acts.cu)
+  cudaconv3/src/weight_acts.cu
+  bias_kernels.cu)
 
 FILE(GLOB luasrc *.lua)
 
