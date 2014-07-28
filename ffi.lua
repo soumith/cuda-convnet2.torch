@@ -47,6 +47,7 @@ void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor
                      int numImgColors, int numGroups, float scaleTargets, float scaleOutput);
 
 void addBias(THCudaTensor* output, THCudaTensor* bias);
+void gradBias(THCudaTensor* output, THCudaTensor* gradBias, float scale);
 ]]
 
 ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))

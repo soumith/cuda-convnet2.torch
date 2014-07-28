@@ -69,9 +69,10 @@ function ccntest.SpatialConvolution_backward_batch()
    local ini = (outi-1)*si+ki
    local inj = ini
    local tm = {}
+   local backwardScale = math.random(1, 10)/10
 
-   local title = string.format('ccn2.SpatialConvolution.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
-                               bs, from, inj, ini, kj, ki, bs, to, outj, outi)
+   local title = string.format('ccn2.SpatialConvolution.backward(scale: %.1f) %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
+                               backwardScale, bs, from, inj, ini, kj, ki, bs, to, outj, outi)
    times[title] = tm
 
    local input = torch.randn(from,inj,ini,bs):cuda()
@@ -79,11 +80,11 @@ function ccntest.SpatialConvolution_backward_batch()
    local sconv = nn.SpatialConvolutionCUDA(from,to,ki,kj,si,sj):cuda()
    sconv:forward(input)
    sconv:zeroGradParameters()
-   local groundgrad = sconv:updateGradInput(input, gradOutput)
+   local groundgrad = sconv:backward(input, gradOutput)
    local a = torch.Timer()
    for i = 1,nloop do
       sconv:zeroGradParameters()
-      groundgrad = sconv:updateGradInput(input, gradOutput)
+      groundgrad = sconv:backward(input, gradOutput, backwardScale)
    end
    local groundweight = sconv.gradWeight
    local groundbias = sconv.gradBias
@@ -94,24 +95,24 @@ function ccntest.SpatialConvolution_backward_batch()
    gconv.bias:copy(sconv.bias)
    gconv:forward(input)
    gconv:zeroGradParameters()
-   local rescuda = gconv:updateGradInput(input, gradOutput)
+   local rescuda = gconv:backward(input, gradOutput)
    a:reset()
    for i = 1,nloop do
       gconv:zeroGradParameters()
-      rescuda = gconv:updateGradInput(input, gradOutput)
+      rescuda = gconv:backward(input, gradOutput, backwardScale)
    end
    local weightcuda = gconv.gradWeight
    local biascuda = gconv.gradBias
    cutorch.synchronize()
    tm.gpu = a:time().real
 
-   error = rescuda:add(groundgrad:mul(-1))
-   werror = weightcuda:add(groundweight:mul(-1))
-   berror = biascuda:add(groundbias:mul(-1))
+   local error = rescuda:add(groundgrad:mul(-1))
+   local werror = weightcuda:add(groundweight:mul(-1))
+   local berror = biascuda:add(groundbias:mul(-1))
 
    mytester:assertlt(error:abs():max(), precision_backward, 'error on state (backward) ')
-   -- mytester:assertlt(werror:abs():max(), precision_backward, 'error on weight (backward) ')
-   -- mytester:assertlt(berror:abs():max(), precision_backward, 'error on bias (backward) ')
+   mytester:assertlt(werror:abs():max(), precision_backward, 'error on weight (backward) ')
+   mytester:assertlt(berror:abs():max(), precision_backward, 'error on bias (backward) ')
 end
 
 

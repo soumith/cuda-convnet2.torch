@@ -79,13 +79,17 @@ function SpatialConvolution:updateGradInput(input, gradOutput)
 end
 
 function SpatialConvolution:accGradParameters(input, gradOutput, scale)
-   ccn2.typecheck(input); ccn2.typecheck(gradOutput);
-   --[[
-      void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, 
-      THCudaTensor* targets,
-      int imgSizeY, int numModulesY, int numModulesX, int filterSize, 
-      int paddingStart, int moduleStride, int numImgColors, 
-      int numGroups, int sumWidth);
-   ]]--
-   return input.nn.SpatialConvolution_accGradParameters(self, input, gradOutput, scale)
+   scale = scale or 1
+   ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
+   ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
+   local oH = gradOutput:size(2);
+   local iH = input:size(2)
+   local nBatch = input:size(4)
+   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
+   local gradOutputC = gradOutput:view(gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4))
+   C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
+                         iH, oH, oH, self.kH, 
+                            -self.padding, self.dH, self.nInputPlane, 1, oH * oH, 0, scale);
+   gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
+   C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);   
 end

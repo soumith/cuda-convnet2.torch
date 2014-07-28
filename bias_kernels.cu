@@ -21,5 +21,9 @@ extern "C" {
     getLastCudaError("Kernel execution failed");
   }
   
-
+  void gradBias(THCudaTensor* gradOutput, THCudaTensor* gradBias, float scale) {
+    dim3 threads(AWR_NUM_THREADS);
+    dim3 blocks(1, gradOutput->size[0]);
+    kAggRows_wholerow_nosync<<<blocks, threads>>>(THCudaTensor_data(gradOutput), THCudaTensor_data(gradBias), gradOutput->size[1], gradOutput->size[0], NVMatrixAggs::Sum(), NVMatrixOps::Identity(), NVMatrixBinaryOps::SecondScaled(scale));
+  }
 }
