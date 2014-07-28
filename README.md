@@ -1,19 +1,23 @@
 This is a Work IN PROGRESS! 
 DONT USE any modules which are not listed below
-Modules that are usable:
 
+####Modules that are usable:
+```
 None so far!
+```
 
-What's finished so far?
+####What's finished so far?
+
 Added SpatialConvolution:updateOutput, SpatialConvolution:updateGradInput
 
-What's left to do?
+####What's left to do?
+
 All the modules from here: https://code.google.com/p/cuda-convnet/wiki/LayerParams
 
-How to do it?
+####How to do it?
 it is pretty simple, 
-1. Add the function signature from cudaconv3/include into ffi.lua
-2. Call the function in your lua module
+* Add the function signature from cudaconv3/include into ffi.lua
+* Call the function in your lua module
 
 For an example, look at SpatialConvolution.lua, 
 
