@@ -1230,32 +1230,32 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     int imgSizeX = imgPixels / imgSizeY;
     int filterModuleMult = conv ? 1 : numModules;
     
-    assert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 4 == 0)));
-    assert(numGroups == 1 || numFilterColors % 4 == 0);
-    assert(numFilters % (16 * numGroups) == 0);
-    assert(numImgColors % numGroups == 0);
+    THAssert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 4 == 0)));
+    THAssert(numGroups == 1 || numFilterColors % 4 == 0);
+    THAssert(numFilters % (16 * numGroups) == 0);
+    THAssert(numImgColors % numGroups == 0);
     //images.printShape("images");
     // printf("rows: %d, pixels: %d, colors: %d\n", images->size[0], imgPixels, numImgColors);
     //images.printShape("images");
-    assert(images->size[0] == imgPixels * numImgColors);
-    assert(imgSizeY * imgSizeX == imgPixels);
+    THAssert(images->size[0] == imgPixels * numImgColors);
+    THAssert(imgSizeY * imgSizeX == imgPixels);
     int numFiltersPerGroup = numFilters / numGroups;
 
     int imgStride = images->stride[0]; // images does not need to be a contiguous matrix
 
     int filterPixels = filters->size[0] / (filterModuleMult * numFilterColors);
     int filterSize = int(sqrt(filterPixels));
-    assert(filterSize * filterSize == filterPixels);
-    assert(filters->size[0] == filterModuleMult * numFilterColors * filterPixels);
+    THAssert(filterSize * filterSize == filterPixels);
+    THAssert(filters->size[0] == filterModuleMult * numFilterColors * filterPixels);
 
     // These routines don't handle the case when only part of the image is visited in the convolution
-    assert(paddingStart <= 0);
-    assert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
-    assert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
-    assert(moduleStride <= filterSize);
+    THAssert(paddingStart <= 0);
+    THAssert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
+    THAssert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
+    THAssert(moduleStride <= filterSize);
     
-    assert(THCudaTensor_isContiguous(filters));
-    assert(THCudaTensor_isContiguous(targets));
+    THAssert(THCudaTensor_isContiguous(filters));
+    THAssert(THCudaTensor_isContiguous(targets));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     int filtersPerThread, threadsY = 4;
     if (numImgColors <= 3) {
@@ -1293,8 +1293,8 @@ __global__ void filterActs_YxX_sparse2(float* images, float* filters, float* tar
     if (scaleTargets == 0) {
       THCudaTensor_resize2d(targets, numFilters * numModules, numImages);
     } else {
-        assert(targets->size[0] == numFilters * numModules);
-        assert(targets->size[1] == numImages);
+        THAssert(targets->size[0] == numFilters * numModules);
+        THAssert(targets->size[1] == numImages);
     }  
 
     // Auto-generated calling code...

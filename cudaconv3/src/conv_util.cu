@@ -74,8 +74,8 @@ void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgS
     int numCases = images->size[1]; 
     int imgPixels = imgSize * imgSize;
     int numColors = images->size[0] / imgPixels;
-    assert(numColors * imgPixels == images->size[0]);
-    assert(numColors > 0 && numColors <= 3);
+    THAssert(numColors * imgPixels == images->size[0]);
+    THAssert(numColors > 0 && numColors <= 3);
     
     THCudaTensor_resizeAs(targets, images);
     int imgsPerThread = numCases % 128 == 0 ? 4 : numCases % 64 == 0 ? 2 : 1;
@@ -203,10 +203,10 @@ __global__ void kNormalizeLCWeights(float* weights, const uint numFilters, const
 void normalizeLocalWeights(THCudaTensor* weights, int numModules, float norm) {
     int numFilters = weights->size[1];
     int weightsPerFilter = weights->size[0] / numModules;
-    assert(numModules * weightsPerFilter == weights->size[0]);
+    THAssert(numModules * weightsPerFilter == weights->size[0]);
     
-    assert(THCudaTensor_isContiguous(weights));
-    assert(numFilters % 16 == 0);
+    THAssert(THCudaTensor_isContiguous(weights));
+    THAssert(numFilters % 16 == 0);
     
     int bx = numFilters % 32 == 0 ? 32 : 16;
     int by = bx == 32 ? 4 : 8;
@@ -662,16 +662,16 @@ void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels
     int numImages = reverse ? target->size[1] : images->size[1];
     int imgPixels = imgSize * imgSize;
 
-    assert(THCudaTensor_isContiguous(images));
-    assert(THCudaTensor_isContiguous(target));
-    assert(strideX > 1);
+    THAssert(THCudaTensor_isContiguous(images));
+    THAssert(THCudaTensor_isContiguous(target));
+    THAssert(strideX > 1);
     
     int outputsX = DIVUP(imgSize, strideX);
     int outputs = outputsX * outputsX;
     if (reverse) {
-        assert(target->size[0] == numChannels * outputs);
+        THAssert(target->size[0] == numChannels * outputs);
     } else  {
-        assert(images->size[0] == numChannels * imgPixels);
+        THAssert(images->size[0] == numChannels * imgPixels);
     }
     
     if (scaleTargets == 0) {
@@ -683,11 +683,11 @@ void _convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels
         }
     } else {
         if (reverse) {
-            assert(images->size[0] == numChannels * outputs);
-            assert(images->size[1] == numImages);
+            THAssert(images->size[0] == numChannels * outputs);
+            THAssert(images->size[1] == numImages);
         } else {
-            assert(target->size[0] == numChannels * outputs);
-            assert(target->size[1] == numImages);
+            THAssert(target->size[0] == numChannels * outputs);
+            THAssert(target->size[1] == numImages);
         }
     }
     
@@ -802,16 +802,16 @@ void convGaussianBlur(THCudaTensor* images, THCudaTensor* filter, THCudaTensor* 
     int imgPixels = images->size[0] / numChannels;
     int imgSize = int(sqrt(imgPixels));
     
-    assert(imgPixels == imgSize * imgSize);
-    assert(radius >= 1 && radius <= 4);
-    assert(imgSize >= 2 * radius + 1);
-    assert(filter->size[0] == 1);
-    assert(images->size[0] == numChannels * imgPixels);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(imgPixels == imgSize * imgSize);
+    THAssert(radius >= 1 && radius <= 4);
+    THAssert(imgSize >= 2 * radius + 1);
+    THAssert(filter->size[0] == 1);
+    THAssert(images->size[0] == numChannels * imgPixels);
+    THAssert(THCudaTensor_isContiguous(target));
     if (scaleTargets == 0) {
       THCudaTensor_resizeAs(target, images);
     } else {
-      assert(THCudaTensor_isSameSizeAs(target, images));
+      THAssert(THCudaTensor_isSameSizeAs(target, images));
     }
 
     dim3 threads(32, 4);
@@ -1297,23 +1297,23 @@ void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCud
     int imgPixels = imgSize * imgSize;
     int numFilters = images->size[0] / imgPixels;
     int numOutputs = maxActs->size[0] / imgPixels;
-    assert(images->size[0] == numFilters * imgPixels);
-    assert(maxGrads->size[0] == numOutputs * imgPixels);
-    assert(maxGrads->size[1] == numImages);
-    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
+    THAssert(images->size[0] == numFilters * imgPixels);
+    THAssert(maxGrads->size[0] == numOutputs * imgPixels);
+    THAssert(maxGrads->size[1] == numImages);
+    THAssert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
 
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
 
-    assert(THCudaTensor_isContiguous(images));
-    assert(THCudaTensor_isContiguous(maxGrads));
-    assert(THCudaTensor_isContiguous(maxActs));
-    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
-//    assert(numFilters % 16 == 0);
-//    assert(numImages % 128 == 0);
+    THAssert(THCudaTensor_isContiguous(images));
+    THAssert(THCudaTensor_isContiguous(maxGrads));
+    THAssert(THCudaTensor_isContiguous(maxActs));
+    THAssert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
+//    THAssert(numFilters % 16 == 0);
+//    THAssert(numImages % 128 == 0);
 
-    assert(stride <= poolSize);
-    assert(startF <= 0);
-    assert(startF + (numOutputs-1) * stride + poolSize >= numFilters); // All filters must be covered
+    THAssert(stride <= poolSize);
+    THAssert(startF <= 0);
+    THAssert(startF + (numOutputs-1) * stride + poolSize >= numFilters); // All filters must be covered
 
     dim3 threads(32, 4);
 
@@ -1343,7 +1343,7 @@ void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCud
                                                                                          scaleTargets, scaleOutputs);
         }
     } else {
-      assert(THCudaTensor_isSameSizeAs(target, images));
+      THAssert(THCudaTensor_isSameSizeAs(target, images));
         if (!checkCaseBounds) {
             if (imgsPerThread == 4) {
                 kCrossMapMaxPoolUndo<4, 32, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(maxGrads), THCudaTensor_data(maxActs), THCudaTensor_data(target),
@@ -2062,23 +2062,23 @@ void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor
     int numImages = images->size[1];
     int numFilters = maxGrads->size[0] / outputs;
     int imgPixels = images->size[0] / numFilters;
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
     
-    assert(imgSize * imgSize == imgPixels);
-    assert(maxGrads->size[0] == numFilters * outputs);
-    assert(maxGrads->size[1] == numImages);
-    assert(THCudaTensor_isContiguous(images));
-    assert(THCudaTensor_isContiguous(maxGrads));
-    assert(THCudaTensor_isContiguous(maxActs));
-    assert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
-    assert(numFilters % 16 == 0);
-//    assert(numImages % 128 == 0);
+    THAssert(imgSize * imgSize == imgPixels);
+    THAssert(maxGrads->size[0] == numFilters * outputs);
+    THAssert(maxGrads->size[1] == numImages);
+    THAssert(THCudaTensor_isContiguous(images));
+    THAssert(THCudaTensor_isContiguous(maxGrads));
+    THAssert(THCudaTensor_isContiguous(maxActs));
+    THAssert(THCudaTensor_isSameSizeAs(maxGrads, maxActs));
+    THAssert(numFilters % 16 == 0);
+//    THAssert(numImages % 128 == 0);
     
-    assert(strideX <= subsX);
+    THAssert(strideX <= subsX);
     
     THCudaTensor_resizeAs(target, images);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     int checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2158,16 +2158,16 @@ void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
     int outputs = outputsX * outputsX;
     int imgPixels = imgSize * imgSize;
     int numFilters = avgGrads->size[0] / outputs;
-    assert(avgGrads->size[0] == numFilters * outputs);
+    THAssert(avgGrads->size[0] == numFilters * outputs);
 
-    assert(THCudaTensor_isContiguous(avgGrads));
-    assert(numFilters % 16 == 0);
-//    assert(numImages % 128 == 0);
+    THAssert(THCudaTensor_isContiguous(avgGrads));
+    THAssert(numFilters % 16 == 0);
+//    THAssert(numImages % 128 == 0);
     
-    assert(strideX <= subsX);
+    THAssert(strideX <= subsX);
     
     THCudaTensor_resize2d(target, numFilters * imgPixels, numImages);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     int checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2256,26 +2256,26 @@ void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* 
 void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv) {
     int numImages = images->size[1];
     int imgPixels = images->size[0] / numFilters;
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
-    assert(imgSize * imgSize == imgPixels);
-    assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
+    THAssert(imgSize * imgSize == imgPixels);
+    THAssert(THCudaTensor_isSameSizeAs(meanDiffs, images));
     
-    assert(THCudaTensor_isContiguous(images));
-    assert(THCudaTensor_isContiguous(meanDiffs));
-    assert(numFilters % 16 == 0 || numFilters <= 8);
+    THAssert(THCudaTensor_isContiguous(images));
+    THAssert(THCudaTensor_isContiguous(meanDiffs));
+    THAssert(numFilters % 16 == 0 || numFilters <= 8);
 
     THCudaTensor_resizeAs(target, images);
     THCudaTensor_resizeAs(denoms, images);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     if (sizeX >= 6 && numFilters % 4 == 0) {
         // This one is faster for large regions (my tests show regions >= 6...)
         int imgsPerThread = 8;
         int filtersPerThread = 4;
         int bx = 8;
         bool checkCaseBounds = numImages % (bx*imgsPerThread) != 0;
-        assert((imgsPerThread * bx) % 32 == 0);
-        assert(numFilters % filtersPerThread == 0);
+        THAssert((imgsPerThread * bx) % 32 == 0);
+        THAssert(numFilters % filtersPerThread == 0);
         dim3 threads(bx, 16);
         dim3 blocks(DIVUP(imgSize, 4) * DIVUP(numImages, bx*imgsPerThread), DIVUP(imgSize, 4) * numFilters / filtersPerThread);
 
@@ -2411,18 +2411,18 @@ void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
     int imgPixels = outGrads->size[0] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
-    assert(imgSize * imgSize == imgPixels);
+    THAssert(imgSize * imgSize == imgPixels);
 
-    assert(outGrads->size[0] == numFilters * imgPixels);
+    THAssert(outGrads->size[0] == numFilters * imgPixels);
 
-    assert(THCudaTensor_isSameSizeAs(denoms, outGrads));
-    assert(THCudaTensor_isSameSizeAs(acts, denoms));
-    assert(THCudaTensor_isContiguous(outGrads));
+    THAssert(THCudaTensor_isSameSizeAs(denoms, outGrads));
+    THAssert(THCudaTensor_isSameSizeAs(acts, denoms));
+    THAssert(THCudaTensor_isContiguous(outGrads));
 
-    assert(numFilters % 16 == 0);
+    THAssert(numFilters % 16 == 0);
     
     THCudaTensor_resizeAs(target, outGrads);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     // First do acts := -2 x scale x acts x outGrads / denoms
     // so that the main routine only has to do an addition in its inner loop.
     int prelimEltsPerThread = 8;
@@ -2440,7 +2440,7 @@ void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
         int filtersPerThread = 4;
         int bx = 16;
         bool checkCaseBounds = numImages % (bx*imgsPerThread) != 0;
-        assert((imgsPerThread * bx) % 32 == 0);
+        THAssert((imgsPerThread * bx) % 32 == 0);
 
         threads = dim3(bx, 16);
         blocks = dim3(DIVUP(imgSize, 4) * DIVUP(numImages, bx*imgsPerThread), DIVUP(imgSize, 4) * numFilters / filtersPerThread);
@@ -2569,10 +2569,10 @@ void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize,
     int tgtPixels = tgtSize * tgtSize;
     int numChannels = images->size[0] / imgPixels;
     int numImages = images->size[1];
-    assert(images->size[0] == numChannels * imgPixels);
+    THAssert(images->size[0] == numChannels * imgPixels);
     
     THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     int numChunksX = DIVUP(tgtSize, 4);
     int numChunks = numChunksX * numChunksX;
     double imgCenter = imgSize * 0.5;
@@ -2618,10 +2618,10 @@ void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize,
 void convRGBToYUV(THCudaTensor* images, THCudaTensor* target) {
     int imgPixels = images->size[0] / 3;
     int numImages = images->size[1];
-    assert(images->size[0] == 3 * imgPixels);
+    THAssert(images->size[0] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
     dim3 threads(32, 4);
@@ -2661,10 +2661,10 @@ void convRGBToYUV(THCudaTensor* images, THCudaTensor* target) {
 void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center) {
     int imgPixels = images->size[0] / 3;
     int numImages = images->size[1];
-    assert(images->size[0] == 3 * imgPixels);
+    THAssert(images->size[0] == 3 * imgPixels);
     
     THCudaTensor_resize2d(target, 3 * imgPixels, numImages);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
     
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
@@ -2738,12 +2738,12 @@ void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize
     int tgtPixels = tgtSize * tgtSize;
 
     int numChannels = imgs->size[0] / imgPixels;
-    assert(imgs->size[0] == imgPixels * numChannels);
-    assert(imgPixels == imgSize * imgSize);
-    assert(imgSize - startY >= tgtSize);
-    assert(imgSize - startX >= tgtSize);
-    assert(startY >= 0);
-    assert(startX >= 0);
+    THAssert(imgs->size[0] == imgPixels * numChannels);
+    THAssert(imgPixels == imgSize * imgSize);
+    THAssert(imgSize - startY >= tgtSize);
+    THAssert(imgSize - startX >= tgtSize);
+    THAssert(startY >= 0);
+    THAssert(startX >= 0);
     THCudaTensor_resize2d(target, numChannels * tgtPixels, numImages);
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
     bool checkCaseBounds = numImages % (32*imgsPerThread) != 0;
@@ -2785,19 +2785,19 @@ void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THC
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked) {
     int numImages = images->size[1];
     int imgPixels = images->size[0] / numFilters;
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
-    assert(imgSize * imgSize == imgPixels);
-    assert(THCudaTensor_isSameSizeAs(meanDiffs, images));
-    assert(sizeF > 0 && sizeF <= numFilters);
+    THAssert(imgSize * imgSize == imgPixels);
+    THAssert(THCudaTensor_isSameSizeAs(meanDiffs, images));
+    THAssert(sizeF > 0 && sizeF <= numFilters);
     
-    assert(THCudaTensor_isContiguous(images));
-    assert(THCudaTensor_isContiguous(meanDiffs));
-    assert(numFilters % 16 == 0);
+    THAssert(THCudaTensor_isContiguous(images));
+    THAssert(THCudaTensor_isContiguous(meanDiffs));
+    THAssert(numFilters % 16 == 0);
 
     THCudaTensor_resizeAs(target, images);
     //          THCudaTensor_resizeAs(denoms, images);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
 
     bool checkCaseBounds = numImages % 128 != 0;
 
@@ -2845,16 +2845,16 @@ void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, 
     int imgPixels = outGrads->size[0] / numFilters;
 
     int imgSize = int(sqrt(imgPixels));
-    assert(imgSize * imgSize == imgPixels);
-    assert(sizeF > 0 && sizeF <= numFilters);
-    assert(outGrads->size[0] == numFilters * imgPixels);
+    THAssert(imgSize * imgSize == imgPixels);
+    THAssert(sizeF > 0 && sizeF <= numFilters);
+    THAssert(outGrads->size[0] == numFilters * imgPixels);
 
-    assert(THCudaTensor_isContiguous(outGrads));
+    THAssert(THCudaTensor_isContiguous(outGrads));
 
-    assert(numFilters % 16 == 0);
+    THAssert(numFilters % 16 == 0);
 
     THCudaTensor_resizeAs(target, outGrads);
-    assert(THCudaTensor_isContiguous(target));
+    THAssert(THCudaTensor_isContiguous(target));
 
 
     dim3 threads2 = dim3(32, 4);

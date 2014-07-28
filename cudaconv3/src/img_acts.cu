@@ -1200,26 +1200,26 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
     int imgPixels = imgSizeY * imgSizeX;
     int numModulesX = numModules / numModulesY;
     
-    assert(numImgColors % numGroups == 0);
-    assert(numFilters % (32*numGroups) == 0); // TODO: insisting on 32 filters due to bug in calling code below. fix that.
-    assert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 2 == 0)));
-    assert(numGroups == 1 || numFilterColors % 4 == 0);
+    THAssert(numImgColors % numGroups == 0);
+    THAssert(numFilters % (32*numGroups) == 0); // TODO: insisting on 32 filters due to bug in calling code below. fix that.
+    THAssert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 2 == 0)));
+    THAssert(numGroups == 1 || numFilterColors % 4 == 0);
 
-    assert(filterPixels == filterSize * filterSize);
-    assert(hidActs->size[0] == numModules * numFilters);
-    assert(filters->size[0] == filterModuleMult * numFilterColors * filterPixels);
-    assert(numModules == numModulesY * numModulesX);
+    THAssert(filterPixels == filterSize * filterSize);
+    THAssert(hidActs->size[0] == numModules * numFilters);
+    THAssert(filters->size[0] == filterModuleMult * numFilterColors * filterPixels);
+    THAssert(numModules == numModulesY * numModulesX);
 
-    assert(THCudaTensor_isContiguous(hidActs));
-    assert(THCudaTensor_isContiguous(filters));
+    THAssert(THCudaTensor_isContiguous(hidActs));
+    THAssert(THCudaTensor_isContiguous(filters));
 
     // These routines don't handle the case when only part of the image is visited in the convolution
-    assert(paddingStart <= 0);
-    assert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
-    assert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
-    assert(moduleStride <= filterSize);
+    THAssert(paddingStart <= 0);
+    THAssert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
+    THAssert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
+    THAssert(moduleStride <= filterSize);
     
-    assert(THCudaTensor_isContiguous(targets)); // no stride support here!
+    THAssert(THCudaTensor_isContiguous(targets)); // no stride support here!
 
     dim3 blocks;
     dim3 threads;
@@ -1232,7 +1232,7 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
                         : numFilterColors % 16 == 0 ? 4
                         : 2;
         imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
-        assert(numFilterColors % (threads.y * colorsPerThread) == 0);
+        THAssert(numFilterColors % (threads.y * colorsPerThread) == 0);
         
         blocks = dim3(DIVUP(numImages, threads.x*imgsPerThread) * (numImgColors/(threads.y*colorsPerThread)), imgPixels);
         // NOTE: the case when channels % 32 == 0 but channels % 48 != 0 and channels % 64 != 0 has not been optimized!!
@@ -1253,8 +1253,8 @@ void _imgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* target
     if (scaleTargets == 0) { // do not scale or use targets matrix
       THCudaTensor_resize2d(targets, numImgColors*imgPixels, numImages);
     } else {
-        assert(targets->size[0] == numImgColors * imgPixels);
-        assert(targets->size[1] == numImages);
+        THAssert(targets->size[0] == numImgColors * imgPixels);
+        THAssert(targets->size[1] == numImages);
     }
     const bool scale = scaleTargets != 0;
 //    cudaFuncSetCacheConfig(conv_img_acts_manycolor_preloadfh_ty_4_tx_32_c_12_ff_16_fh_16< 4, 32, 4, 12, 16, 16, false, false, true >, cudaFuncCachePreferShared);

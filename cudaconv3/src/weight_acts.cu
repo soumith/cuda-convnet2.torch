@@ -2017,35 +2017,32 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     int numModules = numModulesY * numModulesX;
     int numFilters = hidActs->size[0] / numModules;
     int numFiltersPerGroup = numFilters / numGroups;
-    
-    assert(numImgColors % numGroups == 0);
-    assert(numFilters % (16*numGroups) == 0);
-    assert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 16 == 0)));
-    assert(numGroups == 1 || numFilterColors % 16 == 0);
-    assert(imgSizeY * imgSizeX == imgPixels);
-    assert(images->size[0] == imgPixels * numImgColors);
-
+    THAssert(numImgColors % numGroups == 0);
+    THAssert(numFilters % (16*numGroups) == 0);
+    THAssert(numGroups > 1 || (numImgColors > 0 && (numImgColors <= 3 || numImgColors % 16 == 0)));
+    THAssert(numGroups == 1 || numFilterColors % 16 == 0);
+    THAssert(imgSizeY * imgSizeX == imgPixels);
+    THAssert(images->size[0] == imgPixels * numImgColors);
     int filterPixels = filterSize * filterSize;
     int outputModuleChunksX = DIVUP(numModulesX, sumWidth);
     int outputModuleChunksY = DIVUP(numModulesY, sumWidth);
     int outputModuleChunks = outputModuleChunksX * outputModuleChunksY;
 //    partialSum = partialSum == 0 ? numModules : partialSum;
 
-//    assert(numModules % partialSum == 0);
-    assert(hidActs->size[1] == numImages);
+//    THAssert(numModules % partialSum == 0);
+    THAssert(hidActs->size[1] == numImages);
 
     // These routines don't handle the case when only part of the image is visited in the convolution
-    assert(paddingStart <= 0);
-    assert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
-    assert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
-    assert(moduleStride <= filterSize);
+    THAssert(paddingStart <= 0);
+    THAssert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
+    THAssert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
+    THAssert(moduleStride <= filterSize);
     
-    assert(numModules * numFilters == hidActs->size[0]);
+    THAssert(numModules * numFilters == hidActs->size[0]);
 
-    assert(THCudaTensor_isContiguous(hidActs));
+    THAssert(THCudaTensor_isContiguous(hidActs));
 
-    assert(THCudaTensor_isContiguous(targets));
-    
+    THAssert(THCudaTensor_isContiguous(targets));
     int preloadCases = 32;
 
     dim3 blocks, threads;
@@ -2065,9 +2062,9 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
         bx = numFiltersPerGroup % 128 == 0 ? 32 : 16;
         preloadCases = filtersPerThread * colorsPerThread < 32 ? 32 : 16;
         blocks = dim3(outputModuleChunks*(numFilters/(bx*filtersPerThread)), numFilterColors / (by*colorsPerThread), filterPixels);
-        assert(numFilterColors % (by*colorsPerThread) == 0);
+        THAssert(numFilterColors % (by*colorsPerThread) == 0);
     } else { // This is ugly but it's nice to spell it out clearly
-        assert(numGroups == 1); // Just for sanity
+        THAssert(numGroups == 1); // Just for sanity
         // NOTE: these things are only optimized for colors = 3. I didn't really test other cases.
         if (numFilters % 64 == 0) { // TODO: having a separate case for 128 would make things faster, but I probably don't care about 128
             filtersPerThread = 4;
@@ -2096,18 +2093,17 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
         }
         blocks = dim3(outputModuleChunks*(numFilters/(bx*filtersPerThread)), DIVUP(filterPixels, by*pixelsPerThread));
     }
-    assert((by * bx) % preloadCases == 0);
-    assert(numFilters % (bx * filtersPerThread) == 0);
+    THAssert((by * bx) % preloadCases == 0);
+    THAssert(numFilters % (bx * filtersPerThread) == 0);
     threads = dim3(bx, by);
     bool checkCaseBounds = numImages % preloadCases != 0;
     bool scale = scaleTargets != 0;
     if (!scale) { 
       THCudaTensor_resize2d(targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
     } else {
-        assert(targets->size[0] == outputModuleChunks * numFilterColors*filterPixels);
-        assert(targets->size[1] == numFilters);
+        THAssert(targets->size[0] == outputModuleChunks * numFilterColors*filterPixels);
+        THAssert(targets->size[1] == numFilters);
     }
-
     if (scale == false) {
         if (checkCaseBounds == false) {
             if (numFilterColors > 3)  {

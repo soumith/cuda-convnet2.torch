@@ -21,6 +21,9 @@
 #include <THC.h>
 
 #include <assert.h>
+#define THAssert(exp)  if (exp) ; \
+  else THError("assert(%s) failed in file %s, line %d", #exp, __FILE__, __LINE__);
+
 #include <helper_cuda.h>
 
 #ifndef DIVUP
@@ -275,14 +278,14 @@ void convPoolCrossMap(THCudaTensor* images, THCudaTensor* target, const int star
     int numImages = images->size[1];
     int imgPixels = imgSize * imgSize;
     int numFilters = images->size[0] / imgPixels;
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
 
-    assert(THCudaTensor_isContiguous(images));
-//    assert(numFilters % 4 == 0);
-//    assert(numImages % 128 == 0);
-    assert(stride <= poolSize);
-    assert(startF <= 0);
-    assert(startF + (numOutputs-1) * stride + poolSize >= numFilters); // All filters must be covered
+    THAssert(THCudaTensor_isContiguous(images));
+//    THAssert(numFilters % 4 == 0);
+//    THAssert(numImages % 128 == 0);
+    THAssert(stride <= poolSize);
+    THAssert(startF <= 0);
+    THAssert(startF + (numOutputs-1) * stride + poolSize >= numFilters); // All filters must be covered
 
     THCudaTensor_resize2d(target, imgPixels*numOutputs, numImages);
     int imgsPerThread = numImages % 128 == 0 ? 4 : numImages % 64 == 0 ? 2 : 1;
@@ -312,7 +315,7 @@ void convPoolCrossMap(THCudaTensor* images, THCudaTensor* target, const int star
             kPoolCrossMap<Pooler, 4, 32, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(target),
                                                               imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride, pooler);
         } else {
-            assert(false);
+            THAssert(false);
         }
     }
     getLastCudaError("convPoolCrossMap: kernel execution failed");
@@ -456,13 +459,13 @@ void convLocalPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                    int subsX, int startX, int strideX, int outputsX, Pooler pooler) {
     int numImages = images->size[1];
     int imgPixels = images->size[0] / numFilters;
-    assert(images->size[0] == numFilters * imgPixels);
+    THAssert(images->size[0] == numFilters * imgPixels);
     int imgSize = int(sqrt(imgPixels));
-    assert(imgSize * imgSize == imgPixels);
+    THAssert(imgSize * imgSize == imgPixels);
     
-    assert(THCudaTensor_isContiguous(images));
-//    assert(numFilters % 4 == 0);
-//    assert(numImages % 128 == 0);
+    THAssert(THCudaTensor_isContiguous(images));
+//    THAssert(numFilters % 4 == 0);
+//    THAssert(numImages % 128 == 0);
     int outputs = outputsX * outputsX;
     THCudaTensor_resize2d(target, numFilters*outputs, numImages);
 
@@ -472,8 +475,8 @@ void convLocalPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
         int filtersPerThread = numFilters % 4 == 0 ? 4 : numFilters % 3 == 0 ? 3 : numFilters % 2 == 0 ? 2 : 1;
         int bx = 8;
         bool checkCaseBounds = numImages % (bx*imgsPerThread) != 0;
-        assert((imgsPerThread * bx) % 32 == 0);
-        assert(numFilters % filtersPerThread == 0);
+        THAssert((imgsPerThread * bx) % 32 == 0);
+        THAssert(numFilters % filtersPerThread == 0);
         dim3 threads(bx, 16);
         dim3 blocks(DIVUP(outputsX, 4) * DIVUP(numImages, bx*imgsPerThread), DIVUP(outputsX, 4) * numFilters / filtersPerThread);
 //        printf("threads: %dx%d, blocks: %dx%d, imgSize: %d, numFilters: %d, numImages: %d, subsX: %d, startX: %d, outputsX: %d\n",
