@@ -7,7 +7,7 @@ ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding)
 ```
 
 ####What's finished so far?
-ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding) (both :forward and :backward)
+ccn2.SpatialConvolution (both :forward and :backward)
 
 
 ####What's left to do?
