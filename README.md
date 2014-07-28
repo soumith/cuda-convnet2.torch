@@ -3,12 +3,12 @@ DONT USE any modules which are not listed below
 
 ####Modules that are usable:
 ```
-None so far!
+ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding)
 ```
 
 ####What's finished so far?
+ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding) (both :forward and :backward)
 
-Added SpatialConvolution:updateOutput, SpatialConvolution:updateGradInput
 
 ####What's left to do?
 
