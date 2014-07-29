@@ -6,6 +6,8 @@ steps = 4 -- nb of steps in loop to average perf
 ops = 2 -- ops per point
 
 runs = {
+   --[[ 
+      Disabled because of texture memory limits bug!
    {
       -- first layer
       ni = 3,
@@ -18,6 +20,7 @@ runs = {
       dw = 1,
       dh = 1,
    },
+   ]]--
    {
       -- second layer
       ni = 64,
