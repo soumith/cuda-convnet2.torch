@@ -14,7 +14,7 @@ function ccntest.SpatialConvolution_forward_batch()
    if math.random(1,2) == 2 then 
       from = 16 * math.random(1,8)
    end
-   local to = math.random(1,8) * 16
+   local to = math.random(1,8) * 32
    local ki = math.random(3,15)
    local kj = ki
    local si = 1 -- not supported by CPU version yet
@@ -59,7 +59,7 @@ function ccntest.SpatialConvolution_backward_batch()
    if math.random(1,2) == 2 then 
       from = 16 * math.random(1,8)
    end
-   local to = math.random(1,8) * 16
+   local to = math.random(1,8) * 32
    local ki = math.random(3,15)
    local kj = ki
    local si = 1 -- not supported by CPU version yet
