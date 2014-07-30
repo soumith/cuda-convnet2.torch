@@ -1,5 +1,11 @@
-This is a Work IN PROGRESS! 
-DONT USE any modules which are not listed below
+cuda-convnet2.torch
+===================
+
+Torch7 bindings for cuda-convnet2 kernels!
+Kept as a separate repo because of the License, and because the codebase is not small.
+
+**This is a Work IN PROGRESS! **
+**DONT USE any modules which are not listed below**
 
 ####Modules that are usable:
 ```
@@ -43,13 +49,6 @@ features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
 features:add(nn.Transpose({4,1},{4,2},{4,3}))
 features:add(nn.Reshape(featuresOut))
 ```
-
-cuda-convnet2.torch
-===================
-
-Torch7 bindings for cuda-convnet2 kernels!
-Kept as a separate repo because of the License, and because the codebase is not small.
-
 
 ###NVMatrix to THTensor cheatsheet
 | NVMatrix            | THCudaTensor |
