@@ -21,6 +21,28 @@ it is pretty simple,
 
 For an example, look at SpatialConvolution.lua, 
 
+#### How to use them?
+Either send in an input of layout `Depth x Height x Width x Batch`, or wrap around `nn.Transpose` modules
+
+Example
+```lua
+fSize = {3, 96, 128, 128, 384}
+features = nn.Sequential()
+features:add(nn.Transpose({1,4},{1,3},{1,2}))
+features:add(ccn2.SpatialConvolution(fSize[1], fSize[2], 9))
+features:add(nn.ReLU())
+features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(ccn2.SpatialConvolution(fSize[2], fSize[3], 5))
+features:add(nn.ReLU())
+features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(ccn2.SpatialConvolution(fSize[3], fSize[4], 4))
+features:add(nn.ReLU())
+features:add(ccn2.SpatialConvolution(fSize[4], fSize[5], 3))
+features:add(nn.ReLU())
+features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(nn.Transpose({4,1},{4,2},{4,3}))
+features:add(nn.Reshape(featuresOut))
+```
 
 cuda-convnet2.torch
 ===================
