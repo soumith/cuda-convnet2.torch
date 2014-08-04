@@ -2,12 +2,14 @@ require 'sys'
 require 'cunn'
 require 'ccn2'
 
+print('Running on device: ' .. cutorch.getDeviceProperties(cutorch.getDevice()).name)
+
 steps = 4 -- nb of steps in loop to average perf
 ops = 2 -- ops per point
 
 runs = {
-   --[[ 
-      Disabled because of texture memory limits bug!
+   
+   --   Disabled because of texture memory limits bug!
    {
       -- first layer
       ni = 3,
@@ -20,7 +22,6 @@ runs = {
       dw = 1,
       dh = 1,
    },
-   ]]--
    {
       -- second layer
       ni = 64,
@@ -95,65 +96,97 @@ for i,run in ipairs(runs) do
    end
    cutorch.synchronize()
    tm = sys.toc()/steps
-   print('DHWB:updateOutput(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
+   print('cuda-convnet1:updateOutput():        '.. '(tm = ' .. tm .. ')')
 
    cutorch.synchronize()
+   collectgarbage()
    sys.tic()
    for t = 1,steps do
       o2 = n2:updateOutput(i2)
    end
    cutorch.synchronize()
    tm = sys.toc()/steps
-   print('BDHW:updateOutput(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
-   
+   print('SpatialConvolutionMM:updateOutput(): ' .. '(tm = ' .. tm .. ')')
+
    cutorch.synchronize()
+   collectgarbage()
    sys.tic()
    for t = 1,steps do
       o3 = n3:updateOutput(i3)
    end
    cutorch.synchronize()
    tm = sys.toc()/steps
-   print('ccn2:updateOutput(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
+   print('cuda-convnet2:updateOutput():        ' .. '(tm = ' .. tm .. ')')
 
+   print ('')
+
+   cutorch.synchronize()
    collectgarbage()
-   
-   -- cutorch.synchronize()
-   -- sys.tic()
-   -- for t = 1,steps do
-   --    n1:updateGradInput(i1, o1)
-   -- end
-   -- cutorch.synchronize()
-   -- tm = sys.toc()/steps
-   -- print('DHWB:updateGradInput(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
+   sys.tic()
+   for t = 1,steps do
+      n1:updateGradInput(i1, o1)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   print('cuda-convnet1:updateGradInput():        ' .. '(tm = ' .. tm .. ')')
 
-   -- cutorch.synchronize()
-   -- sys.tic()
-   -- for t = 1,steps do
-   --    n2:updateGradInput(i2, o2)
-   -- end
-   -- cutorch.synchronize()
-   -- tm = sys.toc()/steps
-   -- print('BDHW:updateGradInput(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
-   
-   -- collectgarbage()
-   
-   -- cutorch.synchronize()
-   -- sys.tic()
-   -- for t = 1,steps do
-   --    n1:accGradParameters(i1, o1)
-   -- end
-   -- cutorch.synchronize()
-   -- tm = sys.toc()/steps
-   -- print('DHWB:accGradParameters(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
+   cutorch.synchronize()
+   collectgarbage()
+   sys.tic()
+   for t = 1,steps do
+      n2:updateGradInput(i2, o2)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   print('SpatialConvolutionMM:updateGradInput(): ' .. '(tm = ' .. tm .. ')')
 
-   -- cutorch.synchronize()
-   -- sys.tic()
-   -- for t = 1,steps do
-   --    n2:accGradParameters(i2, o2)
-   -- end
-   -- cutorch.synchronize()
-   -- tm = sys.toc()/steps
-   -- print('BDHW:accGradParameters(): ' .. (ni*no*kw*kh*(iw-kw+1)*(ih-kh+1) /dw/dh * bs * ops / tm / 1e9) .. ' GFLOP/s (tm = ' .. tm .. ')')
+   cutorch.synchronize()
+   collectgarbage()
+   sys.tic()
+   for t = 1,steps do
+      n3:updateGradInput(i3, o3)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   print('cuda-convnet2:updateGradInput():        ' .. '(tm = ' .. tm .. ')')
+
+   print ('')
+
+   cutorch.synchronize()
+   collectgarbage()
+   sys.tic()
+   for t = 1,steps do
+      n1:accGradParameters(i1, o1)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   print('cuda-convnet1:accGradParameters():       ' .. '(tm = ' .. tm .. ')')
+
+   cutorch.synchronize()
+   collectgarbage()
+   sys.tic()
+   for t = 1,steps do
+      n2:accGradParameters(i2, o2)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   print('SpatialConvoltionMM:accGradParameters(): ' .. '(tm = ' .. tm .. ')')
+
+   cutorch.synchronize()
+   collectgarbage()
+   sys.tic()
+   local ok
+   for t = 1,steps do
+      ok = pcall(function() n3:accGradParameters(i3, o3) end)
+   end
+   cutorch.synchronize()
+   tm = sys.toc()/steps
+   if not ok then
+      print('cuda-convnet2:accGradParameters():       ' .. 'FAILED!')
+   else
+      print('cuda-convnet2:accGradParameters():       ' .. '(tm = ' .. tm .. ')')
+   end
+
 end
 
 print('')
