@@ -3251,7 +3251,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3)  {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
@@ -3265,7 +3265,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
@@ -3288,7 +3288,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, false >, cudaFuncCachePreferShared);
@@ -3352,7 +3352,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, false, false >, cudaFuncCachePreferShared);
@@ -3365,7 +3365,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                       }
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, false, false >, cudaFuncCachePreferShared);
@@ -3562,7 +3562,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3) {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
@@ -3575,7 +3575,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
@@ -3598,7 +3598,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, true >, cudaFuncCachePreferShared);
@@ -3663,7 +3663,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, true, false >, cudaFuncCachePreferShared);
@@ -3676,7 +3676,7 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                       }
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
-                      if (THCudaTensor_nElement(images) * 4 < TEXTURE_SIZE_MAX) {
+                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
                         cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
                         cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, true, false >, cudaFuncCachePreferShared);

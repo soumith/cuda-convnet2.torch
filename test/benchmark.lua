@@ -175,18 +175,13 @@ for i,run in ipairs(runs) do
    cutorch.synchronize()
    collectgarbage()
    sys.tic()
-   local ok
    for t = 1,steps do
       n3:accGradParameters(i3, o3)
    end
    cutorch.synchronize()
    tm = sys.toc()/steps
-   if not ok then
-      print('cuda-convnet2:accGradParameters():       ' .. 'FAILED!')
-   else
-      print('cuda-convnet2:accGradParameters():       ' .. '(tm = ' .. tm .. ')')
-   end
-
+   print('cuda-convnet2:accGradParameters():       ' .. '(tm = ' .. tm .. ')')
+   
 end
 
 print('')
