@@ -177,7 +177,7 @@ for i,run in ipairs(runs) do
    sys.tic()
    local ok
    for t = 1,steps do
-      ok = pcall(function() n3:accGradParameters(i3, o3) end)
+      n3:accGradParameters(i3, o3)
    end
    cutorch.synchronize()
    tm = sys.toc()/steps
