@@ -21,10 +21,14 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    self.dH = dH
    self.padding = padding
 
-   self.weight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
-   self.bias = torch.Tensor(nOutputPlane)
-   self.gradWeight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
-   self.gradBias = torch.Tensor(nOutputPlane)
+   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
+   local outputSize = oH*oH
+   local filterSize = self.kH*self.kH
+
+   self.weight = torch.Tensor(outputSize*nInputPlane*filterSize, nOutputPlane)
+   self.bias = torch.Tensor(outputSize*nOutputPlane)
+   self.gradWeight = torch.Tensor(outputSize*nInputPlane*filterSize, nOutputPlane)
+   self.gradBias = torch.Tensor(outputSize*nOutputPlane)
 
    self.gradInput = torch.Tensor()
    self.output = torch.Tensor()
