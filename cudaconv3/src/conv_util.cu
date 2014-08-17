@@ -2930,3 +2930,12 @@ void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int nu
 void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
     convContrastNormCrossMap(images, images, target, numFilters, sizeF, addScale, powScale, 1, blocked);
 }
+
+void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                          int subsX, int startX, int strideX, int outputsX)
+{
+    MaxPooler pooler;
+      convLocalPool(images, target, numFilters, subsX, startX, strideX, outputsX, pooler);
+}
+
+
