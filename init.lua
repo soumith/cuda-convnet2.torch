@@ -4,3 +4,4 @@ ccn2 = {}
 include 'ffi.lua'
 include 'utils.lua'
 include 'SpatialConvolution.lua'
+include 'LocalSpatialConvolution.lua'
