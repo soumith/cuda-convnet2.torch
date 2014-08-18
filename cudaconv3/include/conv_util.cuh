@@ -42,10 +42,11 @@ extern "C" {
 void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
 
-}
-
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
+
+}
+
 void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize);
 

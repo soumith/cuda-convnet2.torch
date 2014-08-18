@@ -51,7 +51,8 @@ void gradBias(THCudaTensor* output, THCudaTensor* gradBias, float scale);
 
 void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
-
+void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+                      int subsX, int startX, int strideX, int outputsX);
 ]]
 
 ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))
