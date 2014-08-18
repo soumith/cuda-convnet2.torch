@@ -1,8 +1,8 @@
 local C = ccn2.C
 
-local SpatialConvolution, parent = torch.class('ccn2.SpatialConvolution', 'nn.Module')
+local LocalSpatialConvolution, parent = torch.class('ccn2.LocalSpatialConvolution', 'nn.Module')
 
-function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
+function LocalSpatialConvolution:__init(nInputPlane, nOutputPlane, ini, kH, dH, padding)
    parent.__init(self)
 
    dH = dH or 1 -- stride
@@ -20,9 +20,9 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    self.kH = kH
    self.dH = dH
    self.padding = padding
+   self.oH = math.floor((self.padding * 2 + ini - self.kH) / self.dH + 1)
 
-   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
-   local outputSize = oH*oH
+   local outputSize = self.oH*self.oH
    local filterSize = self.kH*self.kH
 
    self.weight = torch.Tensor(outputSize*nInputPlane*filterSize, nOutputPlane)
@@ -37,7 +37,7 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    self:cuda()
 end
 
-function SpatialConvolution:reset(stdv)
+function LocalSpatialConvolution:reset(stdv)
    if stdv then
       stdv = stdv * math.sqrt(3)
    else
@@ -47,7 +47,7 @@ function SpatialConvolution:reset(stdv)
    self.bias:uniform(-stdv, stdv)   
 end
 
-function SpatialConvolution:updateOutput(input)
+function LocalSpatialConvolution:updateOutput(input)
    ccn2.typecheck(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
@@ -64,7 +64,7 @@ function SpatialConvolution:updateOutput(input)
    return self.output
 end
 
-function SpatialConvolution:updateGradInput(input, gradOutput)
+function LocalSpatialConvolution:updateGradInput(input, gradOutput)
    ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
    local oH = gradOutput:size(2); 
@@ -80,7 +80,7 @@ function SpatialConvolution:updateGradInput(input, gradOutput)
    return self.gradInput
 end
 
-function SpatialConvolution:accGradParameters(input, gradOutput, scale)
+function LocalSpatialConvolution:accGradParameters(input, gradOutput, scale)
    scale = scale or 1
    ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
