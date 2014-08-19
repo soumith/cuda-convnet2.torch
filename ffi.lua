@@ -53,6 +53,19 @@ void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters
                       int subsX, int startX, int strideX, int outputsX);
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
+
+void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                      int subsX, int startX, int strideX, int outputsX);
+void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
+                      int subsX, int startX, int strideX, int outputsX, int imgSize);
+
+void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
+void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+                         int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
+
+void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
+void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+                         int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
 ]]
 
 ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))
