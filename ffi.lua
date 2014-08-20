@@ -66,6 +66,11 @@ void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
 void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
 void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
+
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
+                              float powScale, float minDiv, bool blocked);
+void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+                         int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
 ]]
 
 ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))

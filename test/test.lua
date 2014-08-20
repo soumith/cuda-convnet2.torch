@@ -1,4 +1,5 @@
-require 'ccn2'
+--require 'ccn2'
+dofile 'init.lua'
 require 'cunn'
 
 local ccntest = {}
@@ -8,7 +9,7 @@ local nloop = 1
 local times = {}
 
 
- function ccntest.SpatialConvolution_forward_batch()
+function ccntest.SpatialConvolution_forward_batch()
     local bs = math.random(1,4) * 32
     local from = math.random(1,3); 
     if math.random(1,2) == 2 then 
@@ -199,6 +200,60 @@ function ccntest.SpatialMaxPooling_backward_batch()
    
   mytester:asserteq((groundgrad:float()-rescuda:float()):max(), 0, 'error backward')
 end
+
+
+function ccntest.SpatialCrossResponseNormalization_forward_batch()
+  local bs = math.random(1,4) * 32
+  local from = math.random(1,3) * 16
+  local inj = math.random(1,64)
+  local ini = inj
+  
+  tm = {}
+  local title = string.format('ccn2.SpatialCrossResponseNormalization.forward %dx%dx%dx%d', 
+                                bs, from, inj, ini)
+  times[title] = tm
+                              
+  local input = torch.randn(from,inj,ini,bs):cuda()
+  
+  local gcrossresp = ccn2.SpatialCrossResponseNormalization(5, 0.0001, 0.75, 2)
+  local output = gcrossresp:forward(input)
+  
+  tm.cpu = 1
+  tm.gpu = 1
+end
+
+
+function ccntest.SpatialCrossResponseNormalization_backward_batch()
+  local bs = 32
+  local from = 16 * math.random(1,3)
+  local to = from
+  local ki = math.random(2,4)
+  local kj = ki
+  local si = ki
+  local sj = kj
+  local outi = math.random(16,32)
+  local outj = outi
+  local ini = outi
+  local inj = ini
+
+  local tm = {}
+  local title = string.format('ccn2.SpatialMaxPooling.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
+                               bs, from, inj, ini, kj, ki, bs, to, outj, outi)
+  times[title] = tm
+
+  local input = torch.randn(from,inj,ini, bs):cuda()
+  local gradOutput = torch.randn(to,outj,outi, bs):cuda()
+  
+  local gcrossresp = ccn2.SpatialCrossResponseNormalization(5, 0.0001, 0.75, 2)
+  local output = gcrossresp:forward(input)
+  
+  gcrossresp:zeroGradParameters()
+  local rescuda = gcrossresp:backward(input, gradOutput)
+  
+  tm.cpu = 1
+  tm.gpu = 1
+end
+
 
 torch.setdefaulttensortype('torch.FloatTensor')
 math.randomseed(os.time())

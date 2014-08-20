@@ -62,7 +62,14 @@ void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTenso
 void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
 
+// Local response normalization layer (across maps) 
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked);
+void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+                         int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
 }
+
+
+
 
 // cannot be bounded (overloading)
 void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
@@ -91,13 +98,7 @@ void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THC
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked);
 // where is undo??
 
-// Local response normalization layer (across maps) 
-void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
-                              float powScale, float minDiv, bool blocked);
-void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
-                         int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
-void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
-                              float powScale, bool blocked);
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, bool blocked);
 
 void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgSize);
 
