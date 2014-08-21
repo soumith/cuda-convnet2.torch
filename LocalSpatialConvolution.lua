@@ -51,7 +51,7 @@ function LocalSpatialConvolution:updateOutput(input)
    ccn2.typecheck(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
-   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
+   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1)
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
                              input:size(4))
    -- do convolution
@@ -67,7 +67,7 @@ end
 function LocalSpatialConvolution:updateGradInput(input, gradOutput)
    ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
-   local oH = gradOutput:size(2); 
+   local oH = gradOutput:size(2)
    local iH = input:size(2)
    local nBatch = input:size(4)
    self.gradInput:resize(self.nInputPlane*iH*iH, nBatch);
