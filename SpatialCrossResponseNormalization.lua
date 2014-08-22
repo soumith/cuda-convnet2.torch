@@ -6,9 +6,9 @@ function SpatialCrossResponseNormalization:__init(size, addScale, powScale, minD
   parent.__init(self)
   
   self.size = size
-  self.addScale = addScale
-  self.powScale = powScale
-  self.minDiv = minDiv
+  self.addScale = addScale or 0.0001
+  self.powScale = powScale or 0.75
+  self.minDiv = minDiv or 2
   
   self.output = torch.Tensor()
   self.gradInput = torch.Tensor()
