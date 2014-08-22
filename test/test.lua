@@ -1,5 +1,4 @@
---require 'ccn2'
-dofile 'init.lua'
+require 'ccn2'
 require 'cunn'
 
 local ccntest = {}
@@ -220,6 +219,8 @@ function ccntest.SpatialCrossResponseNormalization_forward_batch()
   
   tm.cpu = 1
   tm.gpu = 1
+
+  -- TODO: Add assertions here
 end
 
 
@@ -252,6 +253,7 @@ function ccntest.SpatialCrossResponseNormalization_backward_batch()
   
   tm.cpu = 1
   tm.gpu = 1
+  -- TODO: Add assertions here
 end
 
 
