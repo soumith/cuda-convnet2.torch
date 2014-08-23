@@ -1,5 +1,4 @@
 require 'ccn2'
-require 'cunn'
 
 local jac_ccntest = {}
 local precision = 1e-5
@@ -77,18 +76,8 @@ function jac_ccntest.LocalSpatialConvolution_Jacobian()
     mytester:assertlt(err,precision, 'error on state ')
 end
 
-torch.setdefaulttensortype('torch.FloatTensor')
 math.randomseed(os.time())
 jac = nn.Jacobian
 mytester = torch.Tester()
 mytester:add(jac_ccntest)
 mytester:run(tests)
-print ''
-print ' ------------------------------------------------------------------------------------------------'
-print '|  Module                                                                          |  Speedup    |'
-print ' ------------------------------------------------------------------------------------------------'
---for module,tm in pairs(times) do
---    local str = string.format('| %-80s | %4.2f        |', module, (tm.cpu / (tm.gpu or 1e6)))
---    print(str)
---end
-print ' ------------------------------------------------------------------------------------------------'
