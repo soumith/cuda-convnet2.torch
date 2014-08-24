@@ -4,6 +4,10 @@
 
 #include "../include/cudaconv2.cuh"
 
+#if defined(_WIN64) || defined(_WIN32) || defined(__APPLE__)
+#define uint unsigned int
+#endif
+
 /*
  * Block size: 16x16.
  * blockIdx.x determines case in batches of 16*imgsPerThread.
