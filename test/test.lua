@@ -200,7 +200,6 @@ function ccntest.SpatialMaxPooling_backward_batch()
   mytester:asserteq((groundgrad:float()-rescuda:float()):max(), 0, 'error backward')
 end
 
-
 function ccntest.SpatialCrossResponseNormalization_forward_batch()
   local bs = math.random(1,4) * 32
   local from = math.random(1,3) * 16
@@ -222,7 +221,6 @@ function ccntest.SpatialCrossResponseNormalization_forward_batch()
 
   -- TODO: Add assertions here
 end
-
 
 function ccntest.SpatialCrossResponseNormalization_backward_batch()
   local bs = 32
@@ -256,6 +254,58 @@ function ccntest.SpatialCrossResponseNormalization_backward_batch()
   -- TODO: Add assertions here
 end
 
+function ccntest.LocalSpatialConvolution_forward_batch()
+    local bs = math.random(1,4) * 32
+    local from = math.random(1,3)
+    local to = math.random(1,8) * 32
+    local ki = math.random(3,15)
+    local si = 1 -- not supported by CPU version yet
+    local outi = math.random(1,64)
+    local ini = (outi-1)*si+ki
+
+    local tm = {}
+    local title = string.format('ccn2.LocalSpatialConvolution.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
+        bs, from, ini, ini, ki, ki, bs, to, outi, outi, si, si)
+    times[title] = tm
+
+    local input = torch.randn(from,ini,ini,bs):cuda()
+
+    local gconvlocal = ccn2.LocalSpatialConvolution(from,to,ini,ki,si):cuda()
+    local output = gconvlocal:forward(input)
+
+    tm.cpu = 1
+    tm.gpu = 1
+
+    -- TODO: Add assertions here
+end
+
+function ccntest.LocalSpatialConvolution_backward_batch()
+    local bs = math.random(1,4) * 32
+    local from = math.random(1,3)
+    local to = math.random(1,8) * 32
+    local ki = math.random(3,15)
+    local si = 1 -- not supported by CPU version yet
+    local outi = math.random(1,64)
+    local ini = (outi-1)*si+ki
+
+    local tm = {}
+    local title = string.format('ccn2.LocalSpatialConvolution.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
+        bs, from, ini, ini, ki, ki, bs, to, outi, outi, si, si)
+    times[title] = tm
+
+    local input = torch.randn(from,ini,ini, bs):cuda()
+    local gradOutput = torch.randn(to,outi,outi, bs):cuda()
+
+    local gconvlocal = ccn2.LocalSpatialConvolution(from,to,ini,ki,si):cuda()
+    local output = gconvlocal:forward(input)
+
+    gconvlocal:zeroGradParameters()
+    local rescuda = gconvlocal:backward(input, gradOutput)
+
+    tm.cpu = 1
+    tm.gpu = 1
+    -- TODO: Add assertions here
+end
 
 torch.setdefaulttensortype('torch.FloatTensor')
 math.randomseed(os.time())
