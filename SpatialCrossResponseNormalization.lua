@@ -7,9 +7,12 @@ function SpatialCrossResponseNormalization:__init(size, addScale, powScale, minD
   
   self.size = size
   self.addScale = addScale or 0.0001
+  -- dic['scale'] /= dic['size'] if self.norm_type == self.CROSSMAP_RESPONSE_NORM else dic['size']**2
+  self.addScale = self.addScale / self.size
   self.powScale = powScale or 0.75
-  self.minDiv = minDiv or 2
-  
+  self.minDiv = minDiv or 1.0
+  -- TODO: check layer.py:1333
+
   self.output = torch.Tensor()
   self.gradInput = torch.Tensor()
   
