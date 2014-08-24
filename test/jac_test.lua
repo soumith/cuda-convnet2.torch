@@ -60,7 +60,7 @@ function jac_ccntest.SpatialConvolution_Jacobian()
     mytester:assertlt(err,precision, 'error on state ')
 end
 
-function jac_ccntest.LocalSpatialConvolution_Jacobian()
+function jac_ccntest.SpatialConvolutionLocal_Jacobian()
     local bs = 32
     local from = math.random(1,3)
     local to = 32
@@ -69,7 +69,7 @@ function jac_ccntest.LocalSpatialConvolution_Jacobian()
     local outi = 4
     local ini = (outi-1)*si+ki
 
-    local module = ccn2.LocalSpatialConvolution(from,to,ini,ki,si):cuda()
+    local module = ccn2.SpatialConvolutionLocal(from,to,ini,ki,si):cuda()
     local input = torch.randn(from,ini,ini,bs):cuda():zero()
 
     local err = jac.testJacobian(module,input)

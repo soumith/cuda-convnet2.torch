@@ -1,8 +1,8 @@
 local C = ccn2.C
 
-local LocalSpatialConvolution, parent = torch.class('ccn2.LocalSpatialConvolution', 'nn.Module')
+local SpatialConvolutionLocal, parent = torch.class('ccn2.SpatialConvolutionLocal', 'nn.Module')
 
-function LocalSpatialConvolution:__init(nInputPlane, nOutputPlane, ini, kH, dH, padding)
+function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, ini, kH, dH, padding)
    parent.__init(self)
 
    dH = dH or 1 -- stride
@@ -37,7 +37,7 @@ function LocalSpatialConvolution:__init(nInputPlane, nOutputPlane, ini, kH, dH, 
    self:cuda()
 end
 
-function LocalSpatialConvolution:reset(stdv)
+function SpatialConvolutionLocal:reset(stdv)
    if stdv then
       stdv = stdv * math.sqrt(3)
    else
@@ -47,7 +47,7 @@ function LocalSpatialConvolution:reset(stdv)
    self.bias:uniform(-stdv, stdv)   
 end
 
-function LocalSpatialConvolution:updateOutput(input)
+function SpatialConvolutionLocal:updateOutput(input)
    ccn2.typecheck(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
@@ -64,7 +64,7 @@ function LocalSpatialConvolution:updateOutput(input)
    return self.output
 end
 
-function LocalSpatialConvolution:updateGradInput(input, gradOutput)
+function SpatialConvolutionLocal:updateGradInput(input, gradOutput)
    ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
    local oH = gradOutput:size(2)
@@ -80,7 +80,7 @@ function LocalSpatialConvolution:updateGradInput(input, gradOutput)
    return self.gradInput
 end
 
-function LocalSpatialConvolution:accGradParameters(input, gradOutput, scale)
+function SpatialConvolutionLocal:accGradParameters(input, gradOutput, scale)
    scale = scale or 1
    ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);

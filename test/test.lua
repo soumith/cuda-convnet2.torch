@@ -254,7 +254,7 @@ function ccntest.SpatialCrossResponseNormalization_backward_batch()
   -- TODO: Add assertions here
 end
 
-function ccntest.LocalSpatialConvolution_forward_batch()
+function ccntest.SpatialConvolutionLocal_forward_batch()
     local bs = math.random(1,4) * 32
     local from = math.random(1,3)
     local to = math.random(1,8) * 32
@@ -264,13 +264,13 @@ function ccntest.LocalSpatialConvolution_forward_batch()
     local ini = (outi-1)*si+ki
 
     local tm = {}
-    local title = string.format('ccn2.LocalSpatialConvolution.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
+    local title = string.format('ccn2.SpatialConvolutionLocal.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
         bs, from, ini, ini, ki, ki, bs, to, outi, outi, si, si)
     times[title] = tm
 
     local input = torch.randn(from,ini,ini,bs):cuda()
 
-    local gconvlocal = ccn2.LocalSpatialConvolution(from,to,ini,ki,si):cuda()
+    local gconvlocal = ccn2.SpatialConvolutionLocal(from,to,ini,ki,si):cuda()
     local output = gconvlocal:forward(input)
 
     tm.cpu = 1
@@ -279,7 +279,7 @@ function ccntest.LocalSpatialConvolution_forward_batch()
     -- TODO: Add assertions here
 end
 
-function ccntest.LocalSpatialConvolution_backward_batch()
+function ccntest.SpatialConvolutionLocal_backward_batch()
     local bs = math.random(1,4) * 32
     local from = math.random(1,3)
     local to = math.random(1,8) * 32
@@ -289,14 +289,14 @@ function ccntest.LocalSpatialConvolution_backward_batch()
     local ini = (outi-1)*si+ki
 
     local tm = {}
-    local title = string.format('ccn2.LocalSpatialConvolution.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
+    local title = string.format('ccn2.SpatialConvolutionLocal.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
         bs, from, ini, ini, ki, ki, bs, to, outi, outi, si, si)
     times[title] = tm
 
     local input = torch.randn(from,ini,ini, bs):cuda()
     local gradOutput = torch.randn(to,outi,outi, bs):cuda()
 
-    local gconvlocal = ccn2.LocalSpatialConvolution(from,to,ini,ki,si):cuda()
+    local gconvlocal = ccn2.SpatialConvolutionLocal(from,to,ini,ki,si):cuda()
     local output = gconvlocal:forward(input)
 
     gconvlocal:zeroGradParameters()
