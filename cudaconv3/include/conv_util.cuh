@@ -37,23 +37,48 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #endif
 
+extern "C" {
+
+void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                      int subsX, int startX, int strideX, int outputsX);
+
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
+
+// prototype only
+void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                      int subsX, int startX, int strideX, int outputsX);
+
 void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize);
 
-void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
-                      int subsX, int startX, int strideX, int outputsX, int imgSize,
-                      float scaleTargets, float scaleOutput);
-void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
-                      int subsX, int startX, int strideX, int outputsX, float scaleTargets, float scaleOutput);
-
+// Local response normalization layer (same map)
 void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
 void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
+
+// Local contrast normalization layer
 void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
 void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
+
+// Local response normalization layer (across maps) 
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked);
+void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+                         int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
+}
+
+
+
+
+// cannot be bounded (overloading)
+void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
+                      int subsX, int startX, int strideX, int outputsX, int imgSize,
+                      float scaleTargets, float scaleOutput);
+
+// cannot be bounded (overloading)
+void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+                      int subsX, int startX, int strideX, int outputsX, float scaleTargets, float scaleOutput);
 
 void convGaussianBlur(THCudaTensor* images, THCudaTensor* filter, THCudaTensor* target, bool horiz, int numChannels,
                       float scaleTargets, float scaleOutputs);
@@ -67,14 +92,14 @@ void convRGBToYUV(THCudaTensor* images, THCudaTensor* target);
 void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center);
 void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize, int startY, int startX);
 void normalizeLocalWeights(THCudaTensor* weights, int numModules, float norm);
+
+// Local contrast normalization layer (across maps)
 void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* target,
                              int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked);
-void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
-                         int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
-void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
-                              float powScale, bool blocked);
-void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
-                              float powScale, float minDiv, bool blocked);
+// where is undo??
+
+void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, bool blocked);
+
 void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgSize);
 
 void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,

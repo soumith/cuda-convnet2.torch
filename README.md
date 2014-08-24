@@ -10,6 +10,7 @@ Kept as a separate repo because of the License, and because the codebase is not 
 ####Modules that are usable:
 ```
 ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding)
+ccn2.SpatialMaxPooling(kW, dW)
 ```
 
 ####What's finished so far?
@@ -37,15 +38,15 @@ features = nn.Sequential()
 features:add(nn.Transpose({1,4},{1,3},{1,2}))
 features:add(ccn2.SpatialConvolution(fSize[1], fSize[2], 9))
 features:add(nn.ReLU())
-features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(ccn2.SpatialMaxPooling(2,2))
 features:add(ccn2.SpatialConvolution(fSize[2], fSize[3], 5))
 features:add(nn.ReLU())
-features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(ccn2.SpatialMaxPooling(2,2))
 features:add(ccn2.SpatialConvolution(fSize[3], fSize[4], 4))
 features:add(nn.ReLU())
 features:add(ccn2.SpatialConvolution(fSize[4], fSize[5], 3))
 features:add(nn.ReLU())
-features:add(nn.SpatialMaxPoolingCUDA(2,2,2,2))
+features:add(ccn2.SpatialMaxPooling(2,2))
 features:add(nn.Transpose({4,1},{4,2},{4,3}))
 features:add(nn.Reshape(featuresOut))
 ```

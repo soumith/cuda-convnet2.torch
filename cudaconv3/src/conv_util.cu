@@ -2430,7 +2430,11 @@ void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
     dim3 blocks(DIVUP(THCudaTensor_nElement(outGrads),(threads.x * prelimEltsPerThread)));
     bool checkPrelimBounds = THCudaTensor_nElement(outGrads) % (threads.x * prelimEltsPerThread) != 0;
     //printf("num elts: %d, blocks: %d\n", outGrads.getNumElements(), blocks.x);
-    kRNormUndoPrelims<128, 8><<<blocks, threads, 0>>>(THCudaTensor_data(acts), THCudaTensor_getTextureObject(denoms), THCudaTensor_getTextureObject(outGrads), THCudaTensor_nElement(outGrads), -2*addScale*powScale);
+    cudaTextureObject_t texDenoms = THCudaTensor_getTextureObject(denoms);
+    cudaTextureObject_t texOutGrads = THCudaTensor_getTextureObject(outGrads);
+    kRNormUndoPrelims<128, 8><<<blocks, threads, 0>>>(THCudaTensor_data(acts), texDenoms, texOutGrads, THCudaTensor_nElement(outGrads), -2*addScale*powScale);
+    checkCudaErrors(cudaDestroyTextureObject(texDenoms));
+    checkCudaErrors(cudaDestroyTextureObject(texOutGrads));
 
     // Now the main routine
     if (sizeX >= 6 && numFilters % 4 == 0) {
@@ -2805,27 +2809,31 @@ void convContrastNormCrossMap(THCudaTensor* images, THCudaTensor* meanDiffs, THC
     dim3 blocks(DIVUP(numImages,32*4) * imgSize, (numFilters / 4) * imgSize);
 //    printf("convContrastNormCrossMap imgs: %p, meanDiffs: %p, denoms: %p, target: %p, imgSize: %d, numFilters: %d, numImages: %d, sizeF: %d, addScale: %f, powScale: %f, minDiv: %f, blocked: %d\n",
 //            THCudaTensor_data(images), THCudaTensor_data(meanDiffs), THCudaTensor_data(denoms), THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv, blocked);
+    cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
+    cudaTextureObject_t texMeanDiffs = THCudaTensor_getTextureObject(meanDiffs);
     if (blocked) {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, true>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, true, true><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
+            kFCNorm<4, 32, 4, true, true><<<blocks, threads, 0>>>(texImages, texMeanDiffs, THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, true>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, false, true><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
+            kFCNorm<4, 32, 4, false, true><<<blocks, threads, 0>>>(texImages, texMeanDiffs, THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         }
     } else {
         if (checkCaseBounds) {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, true, false>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, true, false><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
+            kFCNorm<4, 32, 4, true, false><<<blocks, threads, 0>>>(texImages, texMeanDiffs, THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         } else {
             cudaFuncSetCacheConfig(kFCNorm<4, 32, 4, false, false>, cudaFuncCachePreferL1);
-            kFCNorm<4, 32, 4, false, false><<<blocks, threads, 0>>>(THCudaTensor_getTextureObject(images), THCudaTensor_getTextureObject(meanDiffs), THCudaTensor_data(target),
+            kFCNorm<4, 32, 4, false, false><<<blocks, threads, 0>>>(texImages, texMeanDiffs, THCudaTensor_data(target),
                                                                 imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv);
         }
     }
+    checkCudaErrors(cudaDestroyTextureObject(texImages));
+    checkCudaErrors(cudaDestroyTextureObject(texMeanDiffs));
 
     getLastCudaError("convContrastNormCrossMap: kernel execution failed");
 }
@@ -2861,28 +2869,31 @@ void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, 
     dim3 blocks2 = dim3(DIVUP(numImages,32*4) * imgSize, (numFilters / 4) * imgSize);
 
     bool checkCaseBounds = (numImages % 128) != 0;
+    cudaTextureObject_t texOutGrads = THCudaTensor_getTextureObject(outGrads);
+    cudaTextureObject_t texInputs = THCudaTensor_getTextureObject(inputs);
+    cudaTextureObject_t texActs = THCudaTensor_getTextureObject(acts);
     if (blocked) {
         if (scaleTargets == 0 && scaleOutput == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, true, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, true, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, false, true, true><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, false, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, false, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, false, false, true><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, true, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, true, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, true, true, true><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, false, true>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, false, true><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, true, false, true><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
@@ -2891,30 +2902,32 @@ void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, 
         if (scaleTargets == 0 && scaleOutput == 1) {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, true, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, true, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, false, true, false><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, false, false, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, false, false, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, false, false, false><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         } else {
             if (checkCaseBounds) {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, true, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, true, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, true, true, false><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             } else {
                 cudaFuncSetCacheConfig(kFRNormUndo2<4, 32, 4, true, false, false>, cudaFuncCachePreferL1);
-                kFRNormUndo2<4, 32, 4, true, false, false><<<blocks2, threads2, 0>>>(THCudaTensor_getTextureObject(outGrads), THCudaTensor_getTextureObject(inputs), THCudaTensor_getTextureObject(acts),
+                kFRNormUndo2<4, 32, 4, true, false, false><<<blocks2, threads2, 0>>>(texOutGrads, texInputs, texActs,
                                                                         THCudaTensor_data(target), imgSize, numFilters, numImages, sizeF, addScale, powScale, minDiv,
                                                                         scaleTargets, scaleOutput);
             }
         }
     }
-
+    checkCudaErrors(cudaDestroyTextureObject(texOutGrads));
+    checkCudaErrors(cudaDestroyTextureObject(texInputs));
+    checkCudaErrors(cudaDestroyTextureObject(texActs));
     getLastCudaError("convResponseNormCrossMapUndo: kernel execution failed");
 }
 
@@ -2930,3 +2943,19 @@ void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int nu
 void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, bool blocked) {
     convContrastNormCrossMap(images, images, target, numFilters, sizeF, addScale, powScale, 1, blocked);
 }
+
+void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                          int subsX, int startX, int strideX, int outputsX)
+{
+  MaxPooler pooler;
+  convLocalPool(images, target, numFilters, subsX, startX, strideX, outputsX, pooler);
+}
+
+void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+                          int subsX, int startX, int strideX, int outputsX)
+{
+  AvgPooler pooler;
+  convLocalPool(images, target, numFilters, subsX, startX, strideX, outputsX, pooler);
+}
+
+
