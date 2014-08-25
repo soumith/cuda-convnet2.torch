@@ -4,9 +4,9 @@ require 'cunn'
 local ccntest = {}
 local precision_forward = 1e-4
 local precision_backward = 1e-2
+local precision_jac = 1e-3
 local nloop = 1
 local times = {}
-
 
 function ccntest.SpatialConvolution_forward_batch()
     local bs = math.random(1,4) * 32
@@ -201,65 +201,32 @@ function ccntest.SpatialMaxPooling_backward_batch()
 end
 
 
-function ccntest.SpatialCrossResponseNormalization_forward_batch()
-  local bs = math.random(1,4) * 32
-  local from = math.random(1,3) * 16
-  local inj = math.random(1,64)
-  local ini = inj
-  
-  tm = {}
-  local title = string.format('ccn2.SpatialCrossResponseNormalization.forward %dx%dx%dx%d', 
-                                bs, from, inj, ini)
-  times[title] = tm
-                              
-  local input = torch.randn(from,inj,ini,bs):cuda()
-  
-  local gcrossresp = ccn2.SpatialCrossResponseNormalization(5, 0.0001, 0.75, 2)
-  local output = gcrossresp:forward(input)
-  
-  tm.cpu = 1
-  tm.gpu = 1
+function ccntest.SpatialCrossResponseNormalization_batch()
+    local bs = math.random(1,2) * 32
+    local fmaps = 16 * math.random(1,4)
+    local ini = math.random(5,17)
+    local inj = ini
 
-  -- TODO: Add assertions here
+    local size = math.random(1,fmaps)
+    local addScale = math.random()
+    local powScale = math.random()
+    local minDiv = math.random(1,2)
+    
+    local tm = {}
+    local title = string.format('ccn2.SpatialCrossResponseNormalization.forward %dx%dx%dx%d [s: %d]'
+                                , bs, fmaps, inj, ini, size, addScale, powScale, minDiv)
+    times[title] = tm; tm.cpu = 1; tm.gpu = 1;
+
+    local input = torch.randn(fmaps,inj,ini,bs):cuda()
+    local mod = ccn2.SpatialCrossResponseNormalization(size, addScale, powScale, minDiv):cuda()
+    local errmax, errmean = jac.testJacobian(mod, input)
+    cutorch.synchronize()
+    mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
 end
-
-
-function ccntest.SpatialCrossResponseNormalization_backward_batch()
-  local bs = 32
-  local from = 16 * math.random(1,3)
-  local to = from
-  local ki = math.random(2,4)
-  local kj = ki
-  local si = ki
-  local sj = kj
-  local outi = math.random(16,32)
-  local outj = outi
-  local ini = outi
-  local inj = ini
-
-  local tm = {}
-  local title = string.format('ccn2.SpatialMaxPooling.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
-                               bs, from, inj, ini, kj, ki, bs, to, outj, outi)
-  times[title] = tm
-
-  local input = torch.randn(from,inj,ini, bs):cuda()
-  local gradOutput = torch.randn(to,outj,outi, bs):cuda()
-  
-  local gcrossresp = ccn2.SpatialCrossResponseNormalization(5, 0.0001, 0.75, 2)
-  local output = gcrossresp:forward(input)
-  
-  gcrossresp:zeroGradParameters()
-  local rescuda = gcrossresp:backward(input, gradOutput)
-  
-  tm.cpu = 1
-  tm.gpu = 1
-  -- TODO: Add assertions here
-end
-
 
 torch.setdefaulttensortype('torch.FloatTensor')
 math.randomseed(os.time())
-jac = nn.Jacobian
+jac = ccn2.Jacobian
 mytester = torch.Tester()
 mytester:add(ccntest)
 mytester:run(tests)
