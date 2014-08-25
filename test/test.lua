@@ -223,12 +223,12 @@ function ccntest.SpatialCrossResponseNormalization_batch()
 end
 
 function ccntest.SpatialConvolutionLocal_batch()
-    local bs = math.random(1,4) * 32
+    local bs = math.random(1,2) * 32
     local from = math.random(1,3)
-    local to = math.random(1,8) * 32
+    local to = math.random(1,2) * 32
     local ki = math.random(3,15)
     local si = 1 -- not supported by CPU version yet
-    local outi = math.random(1,64)
+    local outi = math.random(1,20)
     local ini = (outi-1)*si+ki
 
     local tm = {}
