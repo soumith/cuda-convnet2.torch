@@ -9,8 +9,10 @@ Kept as a separate repo because of the License, and because the codebase is not 
 
 ####Modules that are usable:
 ```
-ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, dH, padding)
-ccn2.SpatialMaxPooling(kW, dW)
+ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, [dH = 1], [padding = 0])
+ccn2.SpatialConvolutionLocal(nInputPlane, nOutputPlane, kH, [dH = 1], [padding = 0])
+ccn2.SpatialMaxPooling(kW, [dW = kW])
+ccn2.SpatialCrossResponseNormalization:(nCrossFeaturemaps, [addScale = 0.0001], [powScale = 0.75], [minDiv = 1])
 ```
 
 ####What's finished so far?
