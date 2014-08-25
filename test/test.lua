@@ -200,13 +200,11 @@ function ccntest.SpatialMaxPooling_backward_batch()
   mytester:asserteq((groundgrad:float()-rescuda:float()):max(), 0, 'error backward')
 end
 
-
 function ccntest.SpatialCrossResponseNormalization_batch()
     local bs = math.random(1,2) * 32
     local fmaps = 16 * math.random(1,4)
     local ini = math.random(5,17)
     local inj = ini
-
     local size = math.random(1,fmaps)
     local addScale = math.random()
     local powScale = math.random()
@@ -222,6 +220,31 @@ function ccntest.SpatialCrossResponseNormalization_batch()
     local errmax, errmean = jac.testJacobian(mod, input)
     cutorch.synchronize()
     mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
+end
+
+function ccntest.SpatialConvolutionLocal_forward_batch()
+    local bs = math.random(1,4) * 32
+    local from = math.random(1,3)
+    local to = math.random(1,8) * 32
+    local ki = math.random(3,15)
+    local si = 1 -- not supported by CPU version yet
+    local outi = math.random(1,64)
+    local ini = (outi-1)*si+ki
+
+    local tm = {}
+    local title = string.format('ccn2.SpatialConvolutionLocal.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
+        bs, from, ini, ini, ki, ki, bs, to, outi, outi, si, si)
+    times[title] = tm
+    tm.cpu = 1
+    tm.gpu = 1
+
+    local input = torch.randn(from,ini,ini,bs):cuda()
+    local mod = ccn2.SpatialConvolutionLocal(from,to,ini,ki,si):cuda()
+    local errmax, errmean = jac.testJacobian(mod, input)
+    cutorch.synchronize()
+    mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
+
+
 end
 
 torch.setdefaulttensortype('torch.FloatTensor')
