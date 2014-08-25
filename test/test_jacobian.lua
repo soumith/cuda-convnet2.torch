@@ -65,7 +65,7 @@ function ccntest_jac.SpatialCrossResponseNormalization_Jacobian()
 end
 
 math.randomseed(os.time())
-jac = nn.Jacobian
+jac = ccn2.Jacobian
 mytester = torch.Tester()
 mytester:add(ccntest_jac)
 mytester:run(tests)
