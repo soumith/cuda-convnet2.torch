@@ -222,7 +222,7 @@ function ccntest.SpatialCrossResponseNormalization_batch()
     mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
 end
 
-function ccntest.SpatialConvolutionLocal_forward_batch()
+function ccntest.SpatialConvolutionLocal_batch()
     local bs = math.random(1,4) * 32
     local from = math.random(1,3)
     local to = math.random(1,8) * 32
