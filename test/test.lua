@@ -222,6 +222,28 @@ function ccntest.SpatialCrossResponseNormalization_batch()
     mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
 end
 
+function ccntest.SpatialResponseNormalization_batch()
+    local bs = math.random(1,2) * 32
+    local fmaps = 16 * math.random(1,4)
+    local ini = math.random(5,17)
+    local inj = ini
+    local size = math.random(1,ini)
+    local addScale = math.random()
+    local powScale = math.random()
+    local minDiv = math.random(1,2)
+    
+    local tm = {}
+    local title = string.format('ccn2.SpatialResponseNormalization.forward %dx%dx%dx%d [s: %d]'
+                                , bs, fmaps, inj, ini, size, addScale, powScale, minDiv)
+    times[title] = tm; tm.cpu = 1; tm.gpu = 1;
+
+    local input = torch.randn(fmaps,inj,ini,bs):cuda()
+    local mod = ccn2.SpatialResponseNormalization(size, addScale, powScale, minDiv):cuda()
+    local errmax, errmean = jac.testJacobian(mod, input)
+    cutorch.synchronize()
+    mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
+end
+
 function ccntest.SpatialConvolutionLocal_batch()
     local bs = math.random(1,2) * 32
     local from = math.random(1,3)
