@@ -6,8 +6,8 @@ function SpatialResponseNormalization:__init(size, addScale, powScale, minDiv)
   parent.__init(self)
   
   self.size = size
-  self.addScale = addScale or 0.0001
-  -- dic['scale'] /= dic['size'] if self.norm_type == self.MAP_RESPONSE_NORM else dic['size']**2
+  self.addScale = addScale or 0.001
+  -- dic['scale'] /= dic['size'] if self.norm_type == self.CROSSMAP_RESPONSE_NORM else dic['size']**2
   self.addScale = self.addScale / (self.size * self.size)
   self.powScale = powScale or 0.75
   self.minDiv = minDiv or 1.0
