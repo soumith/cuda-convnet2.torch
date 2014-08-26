@@ -15,10 +15,6 @@ ccn2.SpatialMaxPooling(kW, [dW = kW])
 ccn2.SpatialCrossResponseNormalization:(nCrossFeaturemaps, [addScale = 0.0001], [powScale = 0.75], [minDiv = 1])
 ```
 
-####What's finished so far?
-ccn2.SpatialConvolution (both :forward and :backward)
-
-
 ####What's left to do?
 
 All the modules from here: https://code.google.com/p/cuda-convnet/wiki/LayerParams
