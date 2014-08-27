@@ -45,6 +45,13 @@ void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
 
+void convCrossMapMaxPool(THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
+                         const int numOutputs, const int stride, const int imgSize);
+
+void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+                             const int imgSize, const int startF, const int poolSize,
+                             const int stride, const float scaleTargets, const float scaleOutputs);
+
 // prototype only
 void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
@@ -102,9 +109,6 @@ void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int nu
 
 void convReflectHorizontal(THCudaTensor* images, THCudaTensor* targets, int imgSize);
 
-void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
-                             const int imgSize, const int startF, const int poolSize,
-                             const int stride, const float scaleTargets, const float scaleOutputs);
 
 class AvgPooler {
 public:

@@ -2959,3 +2959,9 @@ void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters
 }
 
 
+void convCrossMapMaxPool(THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
+                         const int numOutputs, const int stride, const int imgSize)
+{
+  MaxPooler pooler;
+  convPoolCrossMap(images, target, startF, poolSize, numOutputs, stride, imgSize, pooler);
+}

@@ -53,6 +53,12 @@ void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters
                       int subsX, int startX, int strideX, int outputsX);
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
+void convCrossMapMaxPool(THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
+                         const int numOutputs, const int stride, const int imgSize);
+
+void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+                             const int imgSize, const int startF, const int poolSize,
+                             const int stride, const float scaleTargets, const float scaleOutputs);
 
 void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
