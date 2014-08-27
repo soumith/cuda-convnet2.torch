@@ -6,7 +6,7 @@ function SpatialMaxPooling:__init(kW, dW)
   parent.__init(self)
   
   self.kW = kW
-  self.dW = dW
+  self.dW = dW or kW
   
   self.output = torch.Tensor()
   self.gradInput = torch.Tensor()
