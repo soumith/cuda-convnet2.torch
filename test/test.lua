@@ -265,9 +265,28 @@ function ccntest.SpatialConvolutionLocal_batch()
     local errmax, errmean = jac.testJacobian(mod, input)
     cutorch.synchronize()
     mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
-
-
 end
+
+function ccntest.SpatialCrossMaxPooling_batch()
+    local bs = math.random(1,2) * 32
+    local fmaps = 16 * math.random(1,4)
+    local ini = math.random(5,17)
+    local inj = ini
+    local kD = math.random(1,fmaps)
+    local dD = math.random(1,fmaps)
+
+    local tm = {}
+    local title = string.format('ccn2.SpatialCrossMaxPooling %dx%dx%dx%d [kD: %d dD: %d]'
+                                , bs, fmaps, inj, ini, kD, dD)
+    times[title] = tm; tm.cpu = 1; tm.gpu = 1;
+
+    local input = torch.randn(fmaps,inj,ini,bs):cuda()
+    local mod = ccn2.SpatialCrossMaxPooling(kD, dD):cuda()
+    local errmax, errmean = jac.testJacobian(mod, input)
+    cutorch.synchronize()
+    mytester:assertlt(errmax, precision_jac, 'Jacobian test failed!')
+end
+
 
 torch.setdefaulttensortype('torch.FloatTensor')
 math.randomseed(os.time())
