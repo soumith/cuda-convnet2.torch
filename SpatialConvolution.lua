@@ -47,7 +47,7 @@ function SpatialConvolution:updateOutput(input)
    ccn2.typecheck(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
-   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
+   local oH = math.ceil((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
                              input:size(4))
    -- do convolution
