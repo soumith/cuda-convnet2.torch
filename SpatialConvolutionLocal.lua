@@ -20,7 +20,7 @@ function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, ini, kH, dH, 
    self.kH = kH
    self.dH = dH
    self.padding = padding
-   self.oH = math.floor((self.padding * 2 + ini - self.kH) / self.dH + 1)
+   self.oH = math.ceil((self.padding * 2 + ini - self.kH) / self.dH + 1)
 
    local outputSize = self.oH*self.oH
    local filterSize = self.kH*self.kH
@@ -51,7 +51,7 @@ function SpatialConvolutionLocal:updateOutput(input)
    ccn2.typecheck(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
-   local oH = math.floor((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1)
+   local oH = math.ceil((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1)
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
                              input:size(4))
    -- do convolution
