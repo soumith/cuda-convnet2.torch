@@ -2,11 +2,12 @@ local C = ccn2.C
 
 local SpatialConvolution, parent = torch.class('ccn2.SpatialConvolution', 'nn.Module')
 
-function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
+function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding, groups)
    parent.__init(self)
 
    dH = dH or 1 -- stride
    padding = padding or 0
+   groups = groups or 1
 
    if not (nInputPlane >= 1 and (nInputPlane <= 3 or math.fmod(nInputPlane, 4) == 0)) then
       error('Assertion failed: [(nInputPlane >= 1 and (nInputPlane <= 3 or math.fmod(nInputPlane, 4)))]. Number of input channels has to be 1, 2, 3 or a multiple of 4')
@@ -19,11 +20,12 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding)
    self.nOutputPlane = nOutputPlane
    self.kH = kH
    self.dH = dH
+   self.groups = groups
    self.padding = padding
 
-   self.weight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
+   self.weight = torch.Tensor(nInputPlane*kH*kH/groups, nOutputPlane)
    self.bias = torch.Tensor(nOutputPlane)
-   self.gradWeight = torch.Tensor(nInputPlane*kH*kH, nOutputPlane)
+   self.gradWeight = torch.Tensor(nInputPlane*kH*kH/groups, nOutputPlane)
    self.gradBias = torch.Tensor(nOutputPlane)
 
    self.gradInput = torch.Tensor()
@@ -37,7 +39,7 @@ function SpatialConvolution:reset(stdv)
    if stdv then
       stdv = stdv * math.sqrt(3)
    else
-      stdv = 1/math.sqrt(self.kH*self.kH*self.nInputPlane)
+      stdv = 1/math.sqrt(self.kH*self.kH*self.nInputPlane/self.groups)
    end
    self.weight:uniform(-stdv, stdv)
    self.bias:uniform(-stdv, stdv)   
@@ -50,10 +52,12 @@ function SpatialConvolution:updateOutput(input)
    local oH = math.ceil((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1);
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
                              input:size(4))
+   self.groups = self.groups or 1
+
    -- do convolution
    C['convFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(), 
                        input:size(2), oH, oH, 
-                          -self.padding, self.dH, self.nInputPlane, 1);
+                          -self.padding, self.dH, self.nInputPlane, self.groups);
    -- add bias
    self.output = self.output:view(self.nOutputPlane, oH*oH*nBatch)
    C['addBias'](self.output:cdata(), self.bias:cdata());
@@ -73,7 +77,7 @@ function SpatialConvolution:updateGradInput(input, gradOutput)
    )
    C['convImgActs'](gradOutputC:cdata(), self.weight:cdata(), self.gradInput:cdata(), 
                     iH, iH, oH, 
-                       -self.padding, self.dH, self.nInputPlane, 1);
+                       -self.padding, self.dH, self.nInputPlane, self.groups);
    self.gradInput = self.gradInput:view(self.nInputPlane, iH, iH, nBatch)
    return self.gradInput
 end
@@ -89,7 +93,7 @@ function SpatialConvolution:accGradParameters(input, gradOutput, scale)
    local gradOutputC = gradOutput:view(gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4))
    C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
                          iH, oH, oH, self.kH, 
-                            -self.padding, self.dH, self.nInputPlane, 1, oH * oH, 0, scale);
+                            -self.padding, self.dH, self.nInputPlane, self.groups, oH * oH, 0, scale);
    gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
    C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);   
 end
