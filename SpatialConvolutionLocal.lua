@@ -2,7 +2,7 @@ local C = ccn2.C
 
 local SpatialConvolutionLocal, parent = torch.class('ccn2.SpatialConvolutionLocal', 'nn.Module')
 
-function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, ini, kH, dH, padding)
+function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, iH, kH, dH, padding)
    parent.__init(self)
 
    dH = dH or 1 -- stride
@@ -20,7 +20,7 @@ function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, ini, kH, dH, 
    self.kH = kH
    self.dH = dH
    self.padding = padding
-   self.oH = math.ceil((self.padding * 2 + ini - self.kH) / self.dH + 1)
+   self.oH = math.ceil((self.padding * 2 + iH - self.kH) / self.dH + 1)
 
    local outputSize = self.oH*self.oH
    local filterSize = self.kH*self.kH
