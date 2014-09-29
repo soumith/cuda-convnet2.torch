@@ -153,6 +153,7 @@ function ccntest.SpatialMaxPooling_forward_batch()
   mytester:asserteq((groundtruth:float() - rescuda:float()):max(), 0, 'error forward')
 end
 
+
 function ccntest.SpatialMaxPooling_backward_batch()
   local bs = 32
   local from = 16 * math.random(1,3)
@@ -198,6 +199,67 @@ function ccntest.SpatialMaxPooling_backward_batch()
   tm.gpu = a:time().real
    
   mytester:asserteq((groundgrad:float()-rescuda:float()):max(), 0, 'error backward')
+end
+
+
+function ccntest.SpatialAvgPooling_forward_batch()
+  local bs = math.random(1,4) * 32
+  local from = math.random(1,3)
+  local inj = math.random(1,32)*2
+  local ini = inj
+  
+  local kw = 2
+  local dw = 2
+  
+  tm = {}
+  local title = string.format('ccn2.SpatialAvgPooling.forward %dx%dx%dx%d o %dx%d', 
+                                bs, from, inj, ini, kw, dw)
+  times[title] = tm
+  tm.cpu = 1
+                              
+  local input = torch.randn(from,inj,ini,bs):cuda()
+  local a = torch.Timer()
+  local gpool = ccn2.SpatialAvgPooling(kw, dw):cuda()
+  local rescuda = gpool:forward(input)
+  a:reset()
+  for i = 1,nloop do
+    rescuda = gpool:forward(input)
+  end
+  cutorch.synchronize()
+  tm.gpu = a:time().real
+
+  mytester:assertlt(math.abs(input:sum()/(kw*kw) - rescuda:sum()), 1e-4, 'sum error')
+end
+
+
+function ccntest.SpatialAvgPooling_backward_batch()
+  local bs = math.random(1,4) * 32
+  local from = math.random(1,3)*16
+  local inj = math.random(1,32)*2
+  local ini = inj
+  
+  local kw = 2
+  local dw = 2
+  
+  tm = {}
+  local title = string.format('ccn2.SpatialAvgPooling.backward %dx%dx%dx%d o %dx%d', 
+                                bs, from, inj, ini, kw, dw)
+  times[title] = tm
+  tm.cpu = 1
+                              
+  local input = torch.randn(from,inj,ini,bs):cuda()
+  local a = torch.Timer()
+  local gpool = ccn2.SpatialAvgPooling(kw, dw):cuda()
+  local output = gpool:forward(input)
+  local rescuda = gpool:backward(input, output)
+  a:reset()
+  for i = 1,nloop do
+    rescuda = gpool:backward(input, output)
+  end
+  cutorch.synchronize()
+  tm.gpu = a:time().real
+
+  -- TODO: add a real check
 end
 
 function ccntest.SpatialCrossResponseNormalization_batch()
