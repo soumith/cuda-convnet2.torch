@@ -2,7 +2,7 @@ local C = ccn2.C
 
 local SpatialCrossResponseNormalization, parent = torch.class('ccn2.SpatialCrossResponseNormalization', 'nn.Module')
 
-function SpatialCrossResponseNormalization:__init(size, addScale, powScale, minDiv)
+function SpatialCrossResponseNormalization:__init(size, addScale, powScale, minDiv, blocked)
   parent.__init(self)
   
   self.size = size
@@ -11,6 +11,7 @@ function SpatialCrossResponseNormalization:__init(size, addScale, powScale, minD
   self.addScale = self.addScale / self.size
   self.powScale = powScale or 0.75
   self.minDiv = minDiv or 1.0
+  self.blocked = blocked or false
   -- TODO: check layer.py:1333
 
   self.output = torch.Tensor()
@@ -29,7 +30,7 @@ function SpatialCrossResponseNormalization:updateOutput(input)
   
   C['convResponseNormCrossMap'](inputC:cdata(), self.output:cdata(), 
                                 input:size(1), self.size, 
-                                self.addScale, self.powScale, self.minDiv, true)
+                                self.addScale, self.powScale, self.minDiv, self.blocked)
   
   self.output = self.output:view(input:size(1), input:size(2), input:size(3), input:size(4))
   return self.output
@@ -48,7 +49,7 @@ function SpatialCrossResponseNormalization:updateGradInput(input, gradOutput)
  
   C['convResponseNormCrossMapUndo'](gradOutputC:cdata(), inputC:cdata(), outputC:cdata(), 
                                     self.gradInput:cdata(), input:size(1), self.size, 
-                                    self.addScale, self.powScale, self.minDiv, true, 0, 1)
+                                    self.addScale, self.powScale, self.minDiv, self.blocked, 0, 1)
   self.gradInput = self.gradInput:view(input:size(1), input:size(2), input:size(3), input:size(4))
   return self.gradInput
 end
