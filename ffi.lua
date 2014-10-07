@@ -77,6 +77,8 @@ void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int nu
                               float powScale, float minDiv, bool blocked);
 void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
+
+void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale);
 ]]
 
 ccn2.C = ffi.load(package.searchpath('libccn2', package.cpath))

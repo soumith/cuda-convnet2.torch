@@ -52,7 +52,6 @@ void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCud
                              const int imgSize, const int startF, const int poolSize,
                              const int stride, const float scaleTargets, const float scaleOutputs);
 
-// prototype only
 void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
 
@@ -73,6 +72,8 @@ void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTe
 void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale, float powScale, float minDiv, bool blocked);
 void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
+
+void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale);
 }
 
 
@@ -94,7 +95,6 @@ void convBedOfNails(THCudaTensor* images, THCudaTensor* target, int numChannels,
 void convBedOfNailsUndo(THCudaTensor* actsGrad, THCudaTensor* target, int numChannels, int imgSize,
                         int startX, int strideX, float scaleTargets, float scaleOutput);
 
-void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale);
 void convRGBToYUV(THCudaTensor* images, THCudaTensor* target);
 void convRGBToLAB(THCudaTensor* images, THCudaTensor* target, bool center);
 void convCrop(THCudaTensor* imgs, THCudaTensor* target, int imgSize, int tgtSize, int startY, int startX);
