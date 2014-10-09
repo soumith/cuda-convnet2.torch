@@ -78,16 +78,16 @@ function load_imagenet(matfilename)
   model:get(i).bias = mat['conv5_b']:squeeze():cuda()
 
   i = 19
-  model:get(i).weight = mat['conv6_w']:cuda()
-  model:get(i).bias = mat['conv6_b']:squeeze():cuda()
+  model:get(i).weight = mat['fc6_w']:cuda()
+  model:get(i).bias = mat['fc6_b']:squeeze():cuda()
 
   i = 22
-  model:get(i).weight = mat['conv7_w']:cuda()
-  model:get(i).bias = mat['conv7_b']:squeeze():cuda()
+  model:get(i).weight = mat['fc7_w']:cuda()
+  model:get(i).bias = mat['fc7_b']:squeeze():cuda()
 
   i = 25
-  model:get(i).weight = mat['conv8_w']:cuda()
-  model:get(i).bias = mat['conv8_b']:squeeze():cuda()
+  model:get(i).weight = mat['fc8_w']:cuda()
+  model:get(i).bias = mat['fc8_b']:squeeze():cuda()
 
   -- run again to check consistency
   output = model:forward(input)
