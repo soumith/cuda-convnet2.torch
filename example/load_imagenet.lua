@@ -97,16 +97,16 @@ function load_imagenet(matfilename)
   return model
 end
 
-function preprocess(im)
+function preprocess(im, meanfilename)
   -- rescale the image
-  local im3 = image.scale(im,227,227,'bilinear')*256
+  local im3 = image.scale(im,227,227,'bilinear')*255
   -- RGB2BGR
   local im4 = im3:clone()
   im4[{1,{},{}}] = im3[{3,{},{}}]
   im4[{3,{},{}}] = im3[{1,{},{}}]
 
   -- subtract imagenet mean
-  local img_mean = mattorch.load('ilsvrc_2012_mean.mat')['img_mean']:transpose(3,1)
+  local img_mean = mattorch.load(meanfilename)['img_mean']:transpose(3,1)
   return im4 - image.scale(img_mean, 227, 227,'bilinear')
 end
 

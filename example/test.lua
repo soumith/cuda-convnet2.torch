@@ -10,7 +10,7 @@ model:evaluate()
 
 im = image.load(imagename)
 
-I = preprocess(im)
+I = preprocess(im,'./ilsvrc_2012_mean.mat')
 batch = torch.Tensor(32,3,227,227)
 
 for i=1,32 do
