@@ -2,7 +2,11 @@ Usage
 -----
 
 As we can't redistribute Caffe weights you have to install and make caffe with matlab or python support.
-Load imagenet network and save it's weights to a matlab file with the following weights:
+Load imagenet network and save it's weights to a matlab file with the following command from matlab:
+```
+save_caffe_weights(prototxtfilename,modelfilename);
+```
+It will generate a .mat file with as many variables as there are weights in the network. For imagenet, the weights are stored as
 ```
 conv1_w
 conv1_b
@@ -10,18 +14,18 @@ conv2_w
 conv2_w
 conv3_w
 conv3_b
+conv4_w
 conv4_b
-conv4_b
+conv5_w
 conv5_b
-conv5_b
-conv6_b
-conv6_b
-conv7_b
-conv7_b
-conv8_b
-conv8_b
+fc6_w
+fc6_b
+fc7_w
+fc7_b
+fc8_w
+fc8_b
 ```
-Then you can load the network with like this:
+Then you can load the network from Torch like this:
 ```
 net = load_imagenet('path_to_imagenet_weight.mat')
 ```
