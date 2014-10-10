@@ -1,6 +1,8 @@
 Usage
 -----
 
+This is not a general way to load Caffe networks in Torch, but you can tweak it to load other than imagenet_deploy network. One could also make the bindings more general by using Lua protobuf implementation for parsing prototxt and model file.
+
 As we can't redistribute Caffe weights you have to install and make caffe with matlab support.
 Load imagenet network and save it's weights to a matlab file with the following command from matlab:
 ```
