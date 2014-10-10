@@ -4,13 +4,14 @@ dofile 'load_imagenet.lua'
 
 matfilename = arg[1]
 imagename = arg[2]
+meanmatname = arg[3]
 
 model = load_imagenet(matfilename)
 model:evaluate()
 
 im = image.load(imagename)
 
-I = preprocess(im,'./ilsvrc_2012_mean.mat')
+I = preprocess(im,meanmatname)
 batch = torch.Tensor(32,3,227,227)
 
 for i=1,32 do

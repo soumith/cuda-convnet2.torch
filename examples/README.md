@@ -1,7 +1,7 @@
 Usage
 -----
 
-As we can't redistribute Caffe weights you have to install and make caffe with matlab or python support.
+As we can't redistribute Caffe weights you have to install and make caffe with matlab support.
 Load imagenet network and save it's weights to a matlab file with the following command from matlab:
 ```
 save_caffe_weights(prototxtfilename,modelfilename);
@@ -29,4 +29,7 @@ Then you can load the network from Torch like this:
 ```
 net = load_imagenet('path_to_imagenet_weight.mat')
 ```
-It will give you the usual Torch network. To preprocess the input image use preprocess function as in the test.lua file
+It will give you the usual Torch network. To preprocess the input image use preprocess function as in the test.lua file. Example:
+```
+th test.lua caffe_reference_imagenet_model_weights.mat cat.jpg ilsvrc_2012_mean.mat
+```
