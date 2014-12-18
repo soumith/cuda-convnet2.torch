@@ -70,9 +70,13 @@ function ccntest.SpatialConvolution_forward_batch()
     local inj = ini
     local tm = {}
     local backwardScale = math.random(1, 10)/10
-
-    local title = string.format('ccn2.SpatialConvolution.backward(scale: %.1f) %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
-                                backwardScale, bs, from, inj, ini, kj, ki, bs, to, outj, outi)
+    local doPartialSum = math.random(0,1)
+    local partialSum
+    if doPartialSum == 1 then
+       partialSum = math.random(1,6)
+    end
+    local title = string.format('ccn2.SpatialConvolution.backward(scale: %.1f, partialSum: %d) %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
+                                backwardScale, partialSum or -1, bs, from, inj, ini, kj, ki, bs, to, outj, outi)
     times[title] = tm
 
     local input = torch.randn(from,inj,ini,bs):cuda()
@@ -90,7 +94,7 @@ function ccntest.SpatialConvolution_forward_batch()
     local groundbias = sconv.gradBias
     tm.cpu = a:time().real
 
-    local gconv = ccn2.SpatialConvolution(from,to,ki,si):cuda()
+    local gconv = ccn2.SpatialConvolution(from,to,ki,si, 0, 1, partialSum):cuda()
     gconv.weight:copy(sconv.weight)
     gconv.bias:copy(sconv.bias)
     gconv:forward(input)

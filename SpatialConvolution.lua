@@ -2,7 +2,7 @@ local C = ccn2.C
 
 local SpatialConvolution, parent = torch.class('ccn2.SpatialConvolution', 'nn.Module')
 
-function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding, groups)
+function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding, groups, partialSum)
    parent.__init(self)
 
    dH = dH or 1 -- stride
@@ -22,6 +22,7 @@ function SpatialConvolution:__init(nInputPlane, nOutputPlane, kH, dH, padding, g
    self.dH = dH
    self.groups = groups
    self.padding = padding
+   self.partialSum = partialSum
 
    self.weight = torch.Tensor(nInputPlane*kH*kH/groups, nOutputPlane)
    self.bias = torch.Tensor(nOutputPlane)
@@ -91,9 +92,26 @@ function SpatialConvolution:accGradParameters(input, gradOutput, scale)
    local nBatch = input:size(4)
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
    local gradOutputC = gradOutput:view(gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4))
-   C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
-                         iH, oH, oH, self.kH, 
-                            -self.padding, self.dH, self.nInputPlane, self.groups, oH * oH, 0, scale);
+
+   local partialSum = self.partialSum or (oH * oH)
+   local doPartialSum = partialSum < oH;
+   if doPartialSum then
+      self.wTemp = self.wTemp or input.new()
+      C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.wTemp:cdata(),
+                            iH, oH, oH, self.kH, 
+                               -self.padding, self.dH, self.nInputPlane, self.groups, self.partialSum, 0, scale);
+      local outWidth = math.floor((oH + partialSum - 1)/partialSum) -- divup
+      local filterChannels = self.nInputPlane/self.groups
+      local filterPixels = self.kH * self.kH
+      local numFilters = self.weight:size(2)
+      self.wTemp = self.wTemp:view(outWidth*outWidth, filterChannels * filterPixels * numFilters)
+      C['addSumCols'](self.gradWeight:cdata(), self.wTemp:cdata());
+      self.gradWeight = self.gradWeight:viewAs(self.weight)
+   else
+      C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
+                            iH, oH, oH, self.kH, 
+                               -self.padding, self.dH, self.nInputPlane, self.groups, partialSum, 0, scale);
+   end
    gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
    C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);   
 end

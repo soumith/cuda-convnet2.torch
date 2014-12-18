@@ -49,6 +49,8 @@ void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor
 void addBias(THCudaTensor* output, THCudaTensor* bias);
 void gradBias(THCudaTensor* output, THCudaTensor* gradBias, float scale);
 
+void addSumCols(THCudaTensor*output, THCudaTensor*input); // used for partialSum
+
 void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
 void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
