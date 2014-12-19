@@ -12,7 +12,8 @@ Kept as a separate repo because of the License, and because the codebase is not 
 ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, [dH = 1], [padding = 0], [partialSum = oH * oH])
 ccn2.SpatialConvolutionLocal(nInputPlane, nOutputPlane, inputHeight, kH, [dH = 1], [padding = 0])
 ccn2.SpatialMaxPooling(kW, [dW = kW])
-ccn2.SpatialCrossResponseNormalization:(nCrossFeaturemaps, [addScale = 0.0001], [powScale = 0.75], [minDiv = 1])
+ccn2.SpatialAvgPooling(kW, [dW = kW])
+ccn2.SpatialCrossResponseNormalization(nCrossFeaturemaps, [addScale = 0.0001], [powScale = 0.75], [minDiv = 1])
 ```
 
 ####What's left to do?
