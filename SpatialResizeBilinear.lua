@@ -9,7 +9,6 @@ function SpatialResizeBilinear:__init(scale, tgtsize)
   self.tgtsize = tgtsize
 
   self.output = torch.Tensor()
-  self:cuda()
 end
 
 function SpatialResizeBilinear:updateOutput(input)

@@ -34,7 +34,6 @@ function SpatialConvolutionLocal:__init(nInputPlane, nOutputPlane, iH, kH, dH, p
    self.output = torch.Tensor()
 
    self:reset()
-   self:cuda()
 end
 
 function SpatialConvolutionLocal:reset(stdv)
@@ -44,7 +43,7 @@ function SpatialConvolutionLocal:reset(stdv)
       stdv = 1/math.sqrt(self.kH*self.kH*self.nInputPlane)
    end
    self.weight:uniform(-stdv, stdv)
-   self.bias:uniform(-stdv, stdv)   
+   self.bias:uniform(-stdv, stdv)
 end
 
 function SpatialConvolutionLocal:updateOutput(input)
@@ -52,7 +51,7 @@ function SpatialConvolutionLocal:updateOutput(input)
    ccn2.inputcheck(input)
    local nBatch = input:size(4)
    local oH = math.ceil((self.padding * 2 + input:size(2) - self.kH) / self.dH + 1)
-   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), 
+   local inputC = input:view(input:size(1) * input:size(2) * input:size(3),
                              input:size(4))
    -- do convolution
    C['localFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(),
@@ -65,7 +64,7 @@ function SpatialConvolutionLocal:updateOutput(input)
 end
 
 function SpatialConvolutionLocal:updateGradInput(input, gradOutput)
-   ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
+   ccn2.typecheck(input); ccn2.typecheck(gradOutput);
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
    local oH = gradOutput:size(2)
    local iH = input:size(2)
@@ -82,7 +81,7 @@ end
 
 function SpatialConvolutionLocal:accGradParameters(input, gradOutput, scale)
    scale = scale or 1
-   ccn2.typecheck(input); ccn2.typecheck(gradOutput); 
+   ccn2.typecheck(input); ccn2.typecheck(gradOutput);
    ccn2.inputcheck(input); ccn2.inputcheck(gradOutput);
    local oH = gradOutput:size(2);
    local iH = input:size(2)
@@ -93,5 +92,5 @@ function SpatialConvolutionLocal:accGradParameters(input, gradOutput, scale)
                          iH, oH, oH, self.kH,
                             -self.padding, self.dH, self.nInputPlane, 1, 0, scale);
    gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
-   C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);   
+   C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);
 end
