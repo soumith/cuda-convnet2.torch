@@ -9,7 +9,7 @@ Kept as a separate repo because of the License, and because the codebase is not 
 
 ####Modules that are usable:
 ```
-ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, [dH = 1], [padding = 0], [partialSum = oH * oH])
+ccn2.SpatialConvolution(nInputPlane, nOutputPlane, kH, [dH = 1], [padding = 0], [groups = 1], [partialSum = oH * oH])
 ccn2.SpatialConvolutionLocal(nInputPlane, nOutputPlane, inputHeight, kH, [dH = 1], [padding = 0])
 ccn2.SpatialMaxPooling(kW, [dW = kW])
 ccn2.SpatialAvgPooling(kW, [dW = kW])
