@@ -47,7 +47,7 @@ features:add(ccn2.SpatialConvolution(fSize[4], fSize[5], 3))
 features:add(nn.ReLU())
 features:add(ccn2.SpatialMaxPooling(2,2))
 features:add(nn.Transpose({4,1},{4,2},{4,3}))
-features:add(nn.Reshape(featuresOut))
+features:add(nn.View(featuresOut))
 ```
 
 ###NVMatrix to THTensor cheatsheet
