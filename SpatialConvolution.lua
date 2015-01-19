@@ -55,12 +55,12 @@ function SpatialConvolution:updateOutput(input)
    self.groups = self.groups or 1
 
    -- do convolution
-   C['convFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(),
+   C['convFilterActs'](cutorch.getState(), inputC:cdata(), self.weight:cdata(), self.output:cdata(),
                        input:size(2), oH, oH,
                           -self.padding, self.dH, self.nInputPlane, self.groups);
    -- add bias
    self.output = self.output:view(self.nOutputPlane, oH*oH*nBatch)
-   C['addBias'](self.output:cdata(), self.bias:cdata());
+   C['addBias'](cutorch.getState(), self.output:cdata(), self.bias:cdata());
    self.output = self.output:view(self.nOutputPlane, oH, oH, nBatch)
    return self.output
 end
@@ -75,7 +75,7 @@ function SpatialConvolution:updateGradInput(input, gradOutput)
    local gradOutputC = gradOutput:view(
       gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4)
    )
-   C['convImgActs'](gradOutputC:cdata(), self.weight:cdata(), self.gradInput:cdata(),
+   C['convImgActs'](cutorch.getState(), gradOutputC:cdata(), self.weight:cdata(), self.gradInput:cdata(),
                     iH, iH, oH,
                        -self.padding, self.dH, self.nInputPlane, self.groups);
    self.gradInput = self.gradInput:view(self.nInputPlane, iH, iH, nBatch)
@@ -96,7 +96,7 @@ function SpatialConvolution:accGradParameters(input, gradOutput, scale)
    local doPartialSum = partialSum < oH;
    if doPartialSum then
       self.wTemp = self.wTemp or input.new()
-      C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.wTemp:cdata(),
+      C['convWeightActsSt'](cutorch.getState(), inputC:cdata(), gradOutputC:cdata(), self.wTemp:cdata(),
                             iH, oH, oH, self.kH,
                                -self.padding, self.dH, self.nInputPlane, self.groups, self.partialSum, 0, scale);
       local outWidth = math.floor((oH + partialSum - 1)/partialSum) -- divup
@@ -104,13 +104,13 @@ function SpatialConvolution:accGradParameters(input, gradOutput, scale)
       local filterPixels = self.kH * self.kH
       local numFilters = self.weight:size(2)
       self.wTemp = self.wTemp:view(outWidth*outWidth, filterChannels * filterPixels * numFilters)
-      C['addSumCols'](self.gradWeight:cdata(), self.wTemp:cdata());
+      C['addSumCols'](cutorch.getState(), self.gradWeight:cdata(), self.wTemp:cdata());
       self.gradWeight = self.gradWeight:viewAs(self.weight)
    else
-      C['convWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
+      C['convWeightActsSt'](cutorch.getState(), inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
                             iH, oH, oH, self.kH,
                                -self.padding, self.dH, self.nInputPlane, self.groups, partialSum, 0, scale);
    end
    gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
-   C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);
+   C['gradBias'](cutorch.getState(), gradOutputC:cdata(), self.gradBias:cdata(), scale);
 end

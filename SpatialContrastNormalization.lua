@@ -26,5 +26,5 @@ function SpatialContrastNormalization:updateOutput(input)
 
   self.output:resize(inputC:size())
 
-  C['convLocalAvgPool'](inputC:cdata(), self.meanDiffs:cdata(), input:size(1), self.size, -self.size/2, 1, outputX)
+  C['convLocalAvgPool'](cutorch.getState(), inputC:cdata(), self.meanDiffs:cdata(), input:size(1), self.size, -self.size/2, 1, outputX)
 end

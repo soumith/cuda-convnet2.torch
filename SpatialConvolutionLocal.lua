@@ -54,11 +54,11 @@ function SpatialConvolutionLocal:updateOutput(input)
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3),
                              input:size(4))
    -- do convolution
-   C['localFilterActs'](inputC:cdata(), self.weight:cdata(), self.output:cdata(),
+   C['localFilterActs'](cutorch.getState(), inputC:cdata(), self.weight:cdata(), self.output:cdata(),
                        input:size(2), oH, oH, -self.padding, self.dH, self.nInputPlane, 1);
    -- add bias
    self.output = self.output:view(self.nOutputPlane, oH*oH*nBatch)
-   C['addBias'](self.output:cdata(), self.bias:cdata());
+   C['addBias'](cutorch.getState(), self.output:cdata(), self.bias:cdata());
    self.output = self.output:view(self.nOutputPlane, oH, oH, nBatch)
    return self.output
 end
@@ -73,7 +73,7 @@ function SpatialConvolutionLocal:updateGradInput(input, gradOutput)
    local gradOutputC = gradOutput:view(
       gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4)
    )
-   C['localImgActs'](gradOutputC:cdata(), self.weight:cdata(), self.gradInput:cdata(),
+   C['localImgActs'](cutorch.getState(), gradOutputC:cdata(), self.weight:cdata(), self.gradInput:cdata(),
                     iH, iH, oH, -self.padding, self.dH, self.nInputPlane, 1);
    self.gradInput = self.gradInput:view(self.nInputPlane, iH, iH, nBatch)
    return self.gradInput
@@ -88,9 +88,9 @@ function SpatialConvolutionLocal:accGradParameters(input, gradOutput, scale)
    local nBatch = input:size(4)
    local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
    local gradOutputC = gradOutput:view(gradOutput:size(1) * gradOutput:size(2) * gradOutput:size(3), gradOutput:size(4))
-   C['localWeightActsSt'](inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
+   C['localWeightActsSt'](cutorch.getState(), inputC:cdata(), gradOutputC:cdata(), self.gradWeight:cdata(),
                          iH, oH, oH, self.kH,
                             -self.padding, self.dH, self.nInputPlane, 1, 0, scale);
    gradOutputC = gradOutput:view(self.nOutputPlane, oH * oH * nBatch)
-   C['gradBias'](gradOutputC:cdata(), self.gradBias:cdata(), scale);
+   C['gradBias'](cutorch.getState(), gradOutputC:cdata(), self.gradBias:cdata(), scale);
 end

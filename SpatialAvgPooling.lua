@@ -20,7 +20,7 @@ function SpatialAvgPooling:updateOutput(input)
   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
   local outputX = math.ceil((input:size(2) - self.kW)/self.dW + 1)
 
-  C['convLocalAvgPool'](inputC:cdata(), self.output:cdata(), input:size(1), self.kW, 0, self.dW, outputX)
+  C['convLocalAvgPool'](cutorch.getState(), inputC:cdata(), self.output:cdata(), input:size(1), self.kW, 0, self.dW, outputX)
 
   local ims = math.sqrt(self.output:size(1)/input:size(1))
   self.output = self.output:view(input:size(1), ims, ims, nBatch)
@@ -35,7 +35,7 @@ function SpatialAvgPooling:updateGradInput(input, gradOutput)
 
   local outputX = math.ceil((input:size(2) - self.kW)/self.dW + 1)
 
-  C['convLocalAvgUndo'](gradOutputC:cdata(), self.gradInput:cdata(), self.kW, 0, self.dW, outputX, input:size(2))
+  C['convLocalAvgUndo'](cutorch.getState(), gradOutputC:cdata(), self.gradInput:cdata(), self.kW, 0, self.dW, outputX, input:size(2))
   self.gradInput = self.gradInput:view(input:size(1), input:size(2), input:size(3), input:size(4))
   return self.gradInput
 end

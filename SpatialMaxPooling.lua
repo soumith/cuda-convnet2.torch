@@ -20,7 +20,7 @@ function SpatialMaxPooling:updateOutput(input)
   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
   local outputX = math.ceil((input:size(2) - self.kW)/self.dW + 1)
 
-  C['convLocalMaxPool'](inputC:cdata(), self.output:cdata(), input:size(1), self.kW, 0, self.dW, outputX)
+  C['convLocalMaxPool'](cutorch.getState(), inputC:cdata(), self.output:cdata(), input:size(1), self.kW, 0, self.dW, outputX)
 
   local ims = math.sqrt(self.output:size(1)/input:size(1))
   self.output = self.output:view(input:size(1), ims, ims, nBatch)
@@ -38,7 +38,7 @@ function SpatialMaxPooling:updateGradInput(input, gradOutput)
   self.gradInput:resize(inputC:size())
   local outputX = math.ceil((input:size(2) - self.kW)/self.dW + 1)
 
-  C['convLocalMaxUndo'](inputC:cdata(), gradOutputC:cdata(), outputC:cdata(), self.gradInput:cdata(), self.kW, 0, self.dW, outputX)
+  C['convLocalMaxUndo'](cutorch.getState(), inputC:cdata(), gradOutputC:cdata(), outputC:cdata(), self.gradInput:cdata(), self.kW, 0, self.dW, outputX)
   self.gradInput = self.gradInput:view(input:size(1), input:size(2), input:size(3), input:size(4))
   return self.gradInput
 end

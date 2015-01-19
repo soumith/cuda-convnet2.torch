@@ -27,7 +27,7 @@ function SpatialResponseNormalization:updateOutput(input)
   local inputC = input:view(input:size(1) * input:size(2) * input:size(3), input:size(4))
   self.output:resize(inputC:size())
 
-  C['convResponseNorm'](inputC:cdata(), self.denoms:cdata(), self.output:cdata(),
+  C['convResponseNorm'](cutorch.getState(), inputC:cdata(), self.denoms:cdata(), self.output:cdata(),
                            input:size(1), self.size,
                            self.addScale, self.powScale, self.minDiv)
 
@@ -46,7 +46,7 @@ function SpatialResponseNormalization:updateGradInput(input, gradOutput)
 
   self.gradInput:resize(inputC:size())
 
-  C['convResponseNormUndo'](gradOutputC:cdata(), self.denoms:cdata(), inputC:cdata(), outputC:cdata(),
+  C['convResponseNormUndo'](cutorch.getState(), gradOutputC:cdata(), self.denoms:cdata(), inputC:cdata(), outputC:cdata(),
                                     self.gradInput:cdata(), input:size(1), self.size,
                                     self.addScale, self.powScale, 0, 1)
   self.gradInput = self.gradInput:view(input:size(1), input:size(2), input:size(3), input:size(4))

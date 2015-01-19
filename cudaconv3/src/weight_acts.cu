@@ -103,7 +103,7 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
     const int moduleIdx = partialSum * outputModuleIdx;
     const int blockFilterIdx = B_X * filtersPerThread* (blockIdx.x % filterBlocksPerModule);
 
-//    const int moduleStride = (imgSize - filterSize + 1) / numModulesX; 
+//    const int moduleStride = (imgSize - filterSize + 1) / numModulesX;
     const int numModules = numModulesY * numModulesX;
 
     const int blockPixelOffset = blockIdx.y * B_Y * pixelsPerThread;
@@ -112,7 +112,7 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
     hidActs += blockFilterIdx * numImages * numModules
             + loadY * numImages * numModules
             + loadX;
-    
+
     targets += (outputModuleIdx * numFilters) * filterPixels * numColors
             + blockPixelOffset * numFilters
             + blockFilterIdx
@@ -129,7 +129,7 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
             }
         }
     }
-    
+
     __shared__ int pxIdxes[B_Y*pixelsPerThread];
     //__shared__ bool isPxInImage[B_Y*pixelsPerThread];
     for (int m = moduleIdx; m < moduleIdx + partialSum; m++) {
@@ -173,7 +173,7 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
 
                         if (pxIdx + blockPixelOffset < filterPixels && (!checkCaseBounds || caseIdx + loadX < numImages)) {
                             const int pixIdx = pxIdxes[pxIdx];//(pxY * imgSizeX + pxX) * imgStride;
-                            
+
                             if (pixIdx >= 0) {
                                 #pragma unroll
                                 for (int c = 0; c < numColors; c++) {
@@ -216,7 +216,7 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
             }
         }
     }
-    
+
     if (scale) {
         #pragma unroll
         for (int p = 0; p < pixelsPerThread; p++) {
@@ -256,12 +256,12 @@ __global__ void conv_weight_acts_c_kepler(float* images, float* hidActs, float* 
  * blockIdx.z determines pixel in filter
  *            NOTE: blockIdx.z is limited to values < 2^16. This means that this routine will
  *                  fail for filters >= 256*256. I'm assuming I won't ever use such large filters.
- 
+
  * images:      (numImgColors, imgSizeY, imgSizeX, numImages), with stride given
  * hidActs:     (numFilters, numModulesY, numModulesX, numImages)
  *
  * targets:     (numModulesY*numModulesX/partialSum, numFilterColors, filterPixels, numFilters)
- 
+
  * B_X * B_Y must be divisible by preloadCases
  */
 template <int B_Y, int B_X, int filtersPerThread, int colorsPerThread, int preloadCases, bool scale>
@@ -286,11 +286,11 @@ __global__ void conv_weight_acts_mc_mf_kepler(float* images, float* hidActs, flo
     const int moduleIdx = partialSum * outputModuleIdx;
     const int blockFilterIdx = filtersPerThread * B_X * (blockIdx.x % numFilterBlocks);
     const int numModules = numModulesY * numModulesX;
-    
+
     const int numFiltersPerGroup = numFilters / numGroups;
     const int blockGroupIdx = blockFilterIdx / numFiltersPerGroup;
     const int numFilterColors = numImgColors / numGroups;
-    
+
     const int blockPixelOffset = blockIdx.z; // pixel idx in filter
     const int blockPixelY = blockPixelOffset / filterSize, blockPixelX = blockPixelOffset % filterSize;
     const int blockFilterColorIdx = blockIdx.y  * B_Y * colorsPerThread;
@@ -298,11 +298,11 @@ __global__ void conv_weight_acts_mc_mf_kepler(float* images, float* hidActs, flo
 
     images += (imgColorIdx + loadY) * imgPixels * imgStride + loadX;
 
-    hidActs += 
+    hidActs +=
              blockFilterIdx * numImages * numModules
             + loadY * numImages * numModules
             + loadX;
-    
+
     targets += outputModuleIdx * numFilters * filterPixels * numFilterColors
             + (blockFilterColorIdx + threadIdx.y) * filterPixels * numFilters
             + blockPixelOffset * numFilters
@@ -338,7 +338,7 @@ __global__ void conv_weight_acts_mc_mf_kepler(float* images, float* hidActs, flo
                      * This will load some images from filter pixels that don't exist (it'll set those to 0),
                      * but the code does not produce any output for those pixels (see last lines).
                      */
-                    if (loadY < B_Y * colorsPerThread) { 
+                    if (loadY < B_Y * colorsPerThread) {
                         #pragma unroll
                         for (int y = 0; y < B_Y * colorsPerThread; y += (B_X * B_Y) / preloadCases) {
                             // Make sure number of rows in the array is divisible by number of rows filled per iteration
@@ -375,7 +375,7 @@ __global__ void conv_weight_acts_mc_mf_kepler(float* images, float* hidActs, flo
                 }
 
                 __syncthreads();
-                #pragma unroll 
+                #pragma unroll
                 for (int i = 0; i < preloadCases; i++) {
                     #pragma unroll
                     for (int f = 0; f < filtersPerThread; f++) {
@@ -3139,16 +3139,16 @@ __global__ void conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16(fl
  * hidActs:     (numFilters, numModules, numImages)
  *
  * targets:     (numModuleY*numModulesX/partialSum, numFilterColors, filterPixels, numFilters)
- * 
+ *
  * TODO: you can get a slight speed boost for local non-convolutional units by writing special
  * routines for partialSum = 1. But I dunno if the code duplication is worth it...
- * 
+ *
  * Note: all of these convolution routines are optimized for the case when
- * the number of images (i.e. the minibatch size) is a multiple of 128. 
+ * the number of images (i.e. the minibatch size) is a multiple of 128.
  * Other batch sizes will work, but but I made no attempt whatsoever
- * to make them work fast. 
+ * to make them work fast.
  */
-void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void _weightActs(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
         int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors,
         int numGroups, int sumWidth, float scaleTargets, float scaleOutput) {
     int numFilterColors = numImgColors / numGroups;
@@ -3179,12 +3179,12 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     THAssert(paddingStart + (numModulesX-1)*moduleStride + filterSize >= imgSizeX);
     THAssert(paddingStart + (numModulesY-1)*moduleStride + filterSize >= imgSizeY);
     THAssert(moduleStride <= filterSize);
-    
+
     THAssert(numModules * numFilters == hidActs->size[0]);
 
-    THAssert(THCudaTensor_isContiguous(hidActs));
+    THAssert(THCudaTensor_isContiguous(state, hidActs));
 
-    THAssert(THCudaTensor_isContiguous(targets));
+    THAssert(THCudaTensor_isContiguous(state, targets));
     int preloadCases = 32;
 
     dim3 blocks, threads;
@@ -3218,19 +3218,19 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             filtersPerThread = 3;
             pixelsPerThread = 4;
             by = 16;
-            bx = 16; 
+            bx = 16;
             preloadCases = 32;
         } else if (numFilters % 32 == 0) {
             filtersPerThread = 2;
             pixelsPerThread = 2;
             by = 8;
-            bx = 16; 
+            bx = 16;
             preloadCases = 16;
         } else { // This case is completely untested. It might be really slow. But no time now.
             filtersPerThread = 1;
             pixelsPerThread = 16;
             by = 16;
-            bx = 16; 
+            bx = 16;
             preloadCases = 32;
         }
         blocks = dim3(outputModuleChunks*(numFilters/(bx*filtersPerThread)), DIVUP(filterPixels, by*pixelsPerThread));
@@ -3240,8 +3240,8 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     threads = dim3(bx, by);
     bool checkCaseBounds = numImages % preloadCases != 0;
     bool scale = scaleTargets != 0;
-    if (!scale) { 
-      THCudaTensor_resize2d(targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
+    if (!scale) {
+      THCudaTensor_resize2d(state, targets, outputModuleChunks * numFilterColors*filterPixels, numFilters);
     } else {
         THAssert(targets->size[0] == outputModuleChunks * numFilterColors*filterPixels);
         THAssert(targets->size[1] == numFilters);
@@ -3251,175 +3251,175 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3)  {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
-                        
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 32 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);                    }
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);                    }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 16 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 2) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 1) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3429,73 +3429,73 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 32 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 16 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3503,55 +3503,55 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 2) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 1) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, false, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3562,175 +3562,175 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
             if (numFilterColors > 3) {
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16_tex< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_8_r_16< 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16_tex< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_16_f_4_c_8_r_16< 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32_tex< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_preload_ty_8_tx_32_f_4_c_6_r_32< 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 32 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 16 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
             else if (numFilterColors <= 3) {
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3_tex < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_2_f_4_r_32_c_3 < 16, 16, 2, 2, 4, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
-                      if ((THCudaTensor_nElement(images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(hidActs)*4 < TEXTURE_SIZE_MAX)) {
-                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(images);
-                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(hidActs);
+                      if ((THCudaTensor_nElement(state, images)*4 < TEXTURE_SIZE_MAX) && (THCudaTensor_nElement(state, hidActs)*4 < TEXTURE_SIZE_MAX)) {
+                        cudaTextureObject_t texImages = THCudaTensor_getTextureObject(state, images);
+                        cudaTextureObject_t texHidActs = THCudaTensor_getTextureObject(state, hidActs);
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3_tex < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(texImages, texHidActs, THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                         checkCudaErrors(cudaDestroyTextureObject(texImages));
                         checkCudaErrors(cudaDestroyTextureObject(texHidActs));
                       } else {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_preload_pc_2_pt_4_f_3_r_32_c_3 < 16, 16, 2, 4, 3, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                       }
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 2) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 1) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, false >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, false ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3740,73 +3740,73 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 if (numFilterColors % 64 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 48 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 32, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 4, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 2, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 8, 16, 1, 6, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 32 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 8, 16, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 8, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors % 16 == 0) {
                     if (numFiltersPerGroup % 128 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 32, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 4, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 2, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_mc_mf_kepler_sw < 4, 16, 1, 4, 32, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, numImgColors, numGroups, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3814,55 +3814,55 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
                 if (numFilterColors == 3) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 3, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 2) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 2, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
                 else if (numFilterColors == 1) {
                     if (numFiltersPerGroup % 64 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 2, 4, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 48 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 4, 3, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 32 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 8, 16, 2, 2, 2, 16, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                     else if (numFiltersPerGroup % 16 == 0) {
                         cudaFuncSetCacheConfig(conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, true >, cudaFuncCachePreferShared);
-                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(images), THCudaTensor_data(hidActs), THCudaTensor_data(targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
+                        conv_weight_acts_c_kepler_sw < 16, 16, 2, 16, 1, 32, 1, true, true ><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, hidActs), THCudaTensor_data(state, targets), numImages, numFilters, numModulesY, numModulesX, imgSizeY, imgSizeX, filterSize, paddingStart, moduleStride, imgStride, sumWidth, scaleTargets, scaleOutput);
                     }
                 }
             }
@@ -3872,25 +3872,25 @@ void _weightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targ
     getLastCudaError("weightActs: kernel execution failed");
 }
 
-void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void convWeightActs(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum) {
-  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, 0, 1);
+  _weightActs(state, images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, 0, 1);
 }
 
-void convWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void convWeightActsSt(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                       int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups, int partialSum,
                       float scaleTargets, float scaleOutput) {
-  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, scaleTargets, scaleOutput);
+  _weightActs(state, images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, partialSum, scaleTargets, scaleOutput);
 }
 
-void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void localWeightActs(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride, int numImgColors, int numGroups) {
-  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1, 0, 1);
+  _weightActs(state, images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1, 0, 1);
 }
 
-void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void localWeightActsSt(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                        int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                        int numImgColors, int numGroups, float scaleTargets, float scaleOutput) {
-  _weightActs(images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1,
+  _weightActs(state, images, hidActs, targets, imgSizeY, numModulesY, numModulesX, filterSize, paddingStart, moduleStride, numImgColors, numGroups, 1,
               scaleTargets, scaleOutput);
 }

@@ -1,86 +1,86 @@
 local ffi = require 'ffi'
 
 ffi.cdef[[
-void convFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void convFilterActs(THCState* state, THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX,
                     int paddingStart, int moduleStride,
                     int numImgColors, int numGroups);
-void convFilterActsSt(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void convFilterActsSt(THCState* state, THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                    int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                    int numImgColors, int numGroups,
                    float scaleTargets, float scaleOutput);
 
-void localFilterActs(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void localFilterActs(THCState* state, THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups);
-void localFilterActsSt(THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
+void localFilterActsSt(THCState* state, THCudaTensor* images, THCudaTensor* filters, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups,
                      float scaleTargets, float scaleOutput);
 
-void convImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void convImgActs(THCState* state, THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void convImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void convImgActsSt(THCState* state, THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                  int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                  float scaleTargets, float scaleOutput);
 
-void localImgActs(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void localImgActs(THCState* state, THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups);
-void localImgActsSt(THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
+void localImgActsSt(THCState* state, THCudaTensor* hidActs, THCudaTensor* filters, THCudaTensor* targets,
                   int imgSizeY, int imgSizeX, int numModulesY, int paddingStart, int moduleStride, int numImgColors, int numGroups,
                   float scaleTargets, float scaleOutput);
 
-void convWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void convWeightActs(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                     int moduleStride, int numImgColors, int numGroups, int sumWidth);
-void convWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void convWeightActsSt(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                     int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                     int numImgColors, int numGroups, int sumWidth,
                     float scaleTargets, float scaleOutput);
 
-void localWeightActs(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void localWeightActs(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart,
                      int moduleStride, int numImgColors, int numGroups);
 
-void localWeightActsSt(THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
+void localWeightActsSt(THCState* state, THCudaTensor* images, THCudaTensor* hidActs, THCudaTensor* targets,
                      int imgSizeY, int numModulesY, int numModulesX, int filterSize, int paddingStart, int moduleStride,
                      int numImgColors, int numGroups, float scaleTargets, float scaleOutput);
 
-void addBias(THCudaTensor* output, THCudaTensor* bias);
-void gradBias(THCudaTensor* output, THCudaTensor* gradBias, float scale);
+void addBias(THCState* state, THCudaTensor* output, THCudaTensor* bias);
+void gradBias(THCState* state, THCudaTensor* output, THCudaTensor* gradBias, float scale);
 
-void addSumCols(THCudaTensor*output, THCudaTensor*input); // used for partialSum
+void addSumCols(THCState* state, THCudaTensor*output, THCudaTensor*input); // used for partialSum
 
-void convLocalMaxPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+void convLocalMaxPool(THCState* state, THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
-void convLocalMaxUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+void convLocalMaxUndo(THCState* state, THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX);
 
-void convCrossMapMaxPool(THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
+void convCrossMapMaxPool(THCState* state, THCudaTensor* images, THCudaTensor* target, const int startF, const int poolSize,
                          const int numOutputs, const int stride, const int imgSize);
-void convCrossMapMaxPoolUndo(THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
+void convCrossMapMaxPoolUndo(THCState* state, THCudaTensor* images, THCudaTensor* maxGrads, THCudaTensor* maxActs, THCudaTensor* target,
                              const int imgSize, const int startF, const int poolSize,
                              const int stride, const float scaleTargets, const float scaleOutputs);
 
-void convLocalAvgPool(THCudaTensor* images, THCudaTensor* target, int numFilters,
+void convLocalAvgPool(THCState* state, THCudaTensor* images, THCudaTensor* target, int numFilters,
                       int subsX, int startX, int strideX, int outputsX);
-void convLocalAvgUndo(THCudaTensor* avgGrads, THCudaTensor* target,
+void convLocalAvgUndo(THCState* state, THCudaTensor* avgGrads, THCudaTensor* target,
                       int subsX, int startX, int strideX, int outputsX, int imgSize);
 
-void convResponseNorm(THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
-void convResponseNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+void convResponseNorm(THCState* state, THCudaTensor* images, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
+void convResponseNormUndo(THCState* state, THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
 
-void convContrastNorm(THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
-void convContrastNormUndo(THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+void convContrastNorm(THCState* state, THCudaTensor* images, THCudaTensor* meanDiffs, THCudaTensor* denoms, THCudaTensor* target, int numFilters, int sizeX, float addScale, float powScale, float minDiv);
+void convContrastNormUndo(THCState* state, THCudaTensor* outGrads, THCudaTensor* denoms, THCudaTensor* meanDiffs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeX, float addScale, float powScale, float scaleTargets, float scaleOutput);
 
-void convResponseNormCrossMap(THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
+void convResponseNormCrossMap(THCState* state, THCudaTensor* images, THCudaTensor* target, int numFilters, int sizeF, float addScale,
                               float powScale, float minDiv, bool blocked);
-void convResponseNormCrossMapUndo(THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
+void convResponseNormCrossMapUndo(THCState* state, THCudaTensor* outGrads, THCudaTensor* inputs, THCudaTensor* acts, THCudaTensor* target, int numFilters,
                          int sizeF, float addScale, float powScale, float minDiv, bool blocked, float scaleTargets, float scaleOutput);
 
-void convResizeBilinear(THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale);
+void convResizeBilinear(THCState* state, THCudaTensor* images, THCudaTensor* target, int imgSize, int tgtSize, float scale);
 ]]
 
 local path = package.searchpath('libccn2', package.cpath)
