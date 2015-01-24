@@ -20,7 +20,7 @@ function SpatialResizeBilinear:updateOutput(input)
   local imgsize = input:size(3)
   local tgtsize = self.tgtsize or imgsize
 
-  C['convResizeBilinear'](inputC:cdata(), self.output:cdata(), imgsize, tgtsize, self.scale)
+  C['convResizeBilinear'](cutorch.getState(), inputC:cdata(), self.output:cdata(), imgsize, tgtsize, self.scale)
 
   self.output = self.output:view(input:size(1), tgtsize, tgtsize, nBatch)
   return self.output

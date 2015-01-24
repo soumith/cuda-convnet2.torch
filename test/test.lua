@@ -3,15 +3,15 @@ require 'cunn'
 
 local ccntest = {}
 local precision_forward = 1e-4
-local precision_backward = 1e-2
+local precision_backward = 2e-2
 local precision_jac = 1e-3
 local nloop = 1
 local times = {}
 
 function ccntest.SpatialConvolution_forward_batch()
     local bs = math.random(1,4) * 32
-    local from = math.random(1,3); 
-    if math.random(1,2) == 2 then 
+    local from = math.random(1,3);
+    if math.random(1,2) == 2 then
        from = 16 * math.random(1,8)
     end
     local to = math.random(1,8) * 32
@@ -25,7 +25,7 @@ function ccntest.SpatialConvolution_forward_batch()
     local inj = ini
 
     local tm = {}
-    local title = string.format('ccn2.SpatialConvolution.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]', 
+    local title = string.format('ccn2.SpatialConvolution.forward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d [s: %dx%d]',
                                 bs, from, inj, ini, kj, ki, bs, to, outj, outi, sj, si)
     times[title] = tm
 
@@ -55,8 +55,8 @@ function ccntest.SpatialConvolution_forward_batch()
 
  function ccntest.SpatialConvolution_backward_batch()
     local bs = math.random(1,4) * 32
-    local from = math.random(1,3); 
-    if math.random(1,2) == 2 then 
+    local from = math.random(1,3);
+    if math.random(1,2) == 2 then
        from = 16 * math.random(1,8)
     end
     local to = math.random(1,8) * 32
@@ -75,7 +75,7 @@ function ccntest.SpatialConvolution_forward_batch()
     if doPartialSum == 1 then
        partialSum = math.random(1,6)
     end
-    local title = string.format('ccn2.SpatialConvolution.backward(scale: %.1f, partialSum: %d) %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
+    local title = string.format('ccn2.SpatialConvolution.backward(scale: %.1f, partialSum: %d) %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d',
                                 backwardScale, partialSum or -1, bs, from, inj, ini, kj, ki, bs, to, outj, outi)
     times[title] = tm
 
@@ -124,17 +124,17 @@ function ccntest.SpatialMaxPooling_forward_batch()
   local from = math.random(1,3)
   local inj = math.random(1,64)
   local ini = inj
-  
+
   local kw = 3
   local dw = 2
-  
+
   tm = {}
-  local title = string.format('ccn2.SpatialMaxPooling.forward %dx%dx%dx%d o %dx%d', 
+  local title = string.format('ccn2.SpatialMaxPooling.forward %dx%dx%dx%d o %dx%d',
                                 bs, from, inj, ini, kw, dw)
   times[title] = tm
-                              
+
   local input = torch.randn(from,inj,ini,bs):cuda()
-  
+
   local spool = nn.SpatialMaxPoolingCUDA(kw, kw, dw, dw):cuda()
   local groundtruth = spool:forward(input)
   local a = torch.Timer()
@@ -143,7 +143,7 @@ function ccntest.SpatialMaxPooling_forward_batch()
   end
   cutorch.synchronize()
   tm.cpu = a:time().real
-  
+
   local gpool = ccn2.SpatialMaxPooling(kw, dw):cuda()
   local rescuda = gpool:forward(input)
   a:reset()
@@ -153,6 +153,9 @@ function ccntest.SpatialMaxPooling_forward_batch()
   cutorch.synchronize()
   tm.gpu = a:time().real
 
+  rescuda = rescuda:float()
+  -- convert output of ccn2 to ceil mode
+  rescuda = rescuda[{{},{1,groundtruth:size(2)},{1,groundtruth:size(3)},{}}]:clone()
   mytester:asserteq(groundtruth:size(2), rescuda:size(2), 'output size')
   mytester:asserteq((groundtruth:float() - rescuda:float()):max(), 0, 'error forward')
 end
@@ -172,7 +175,7 @@ function ccntest.SpatialMaxPooling_backward_batch()
   local inj = (outj-1)*sj+kj
 
   local tm = {}
-  local title = string.format('ccn2.SpatialMaxPooling.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d', 
+  local title = string.format('ccn2.SpatialMaxPooling.backward %dx%dx%dx%d o %dx%d -> %dx%dx%dx%d',
                                bs, from, inj, ini, kj, ki, bs, to, outj, outi)
   times[title] = tm
 
@@ -190,7 +193,7 @@ function ccntest.SpatialMaxPooling_backward_batch()
     groundgrad = sconv:backward(input, gradOutput)
   end
   tm.cpu = a:time().real
-   
+
   local gconv = ccn2.SpatialMaxPooling(ki, si):cuda()
   gconv:forward(input)
   gconv:zeroGradParameters()
@@ -201,7 +204,7 @@ function ccntest.SpatialMaxPooling_backward_batch()
     rescuda = gconv:backward(input, gradOutput)
   end
   tm.gpu = a:time().real
-   
+
   mytester:asserteq((groundgrad:float()-rescuda:float()):max(), 0, 'error backward')
 end
 
@@ -211,16 +214,16 @@ function ccntest.SpatialAvgPooling_forward_batch()
   local from = math.random(1,3)
   local inj = math.random(1,32)*2
   local ini = inj
-  
+
   local kw = 2
   local dw = 2
-  
+
   tm = {}
-  local title = string.format('ccn2.SpatialAvgPooling.forward %dx%dx%dx%d o %dx%d', 
+  local title = string.format('ccn2.SpatialAvgPooling.forward %dx%dx%dx%d o %dx%d',
                                 bs, from, inj, ini, kw, dw)
   times[title] = tm
   tm.cpu = 1
-                              
+
   local input = torch.randn(from,inj,ini,bs):cuda()
   local a = torch.Timer()
   local gpool = ccn2.SpatialAvgPooling(kw, dw):cuda()
@@ -241,16 +244,16 @@ function ccntest.SpatialAvgPooling_backward_batch()
   local from = math.random(1,3)*16
   local inj = math.random(1,32)*2
   local ini = inj
-  
+
   local kw = 2
   local dw = 2
-  
+
   tm = {}
-  local title = string.format('ccn2.SpatialAvgPooling.backward %dx%dx%dx%d o %dx%d', 
+  local title = string.format('ccn2.SpatialAvgPooling.backward %dx%dx%dx%d o %dx%d',
                                 bs, from, inj, ini, kw, dw)
   times[title] = tm
   tm.cpu = 1
-                              
+
   local input = torch.randn(from,inj,ini,bs):cuda()
   local a = torch.Timer()
   local gpool = ccn2.SpatialAvgPooling(kw, dw):cuda()
@@ -275,7 +278,7 @@ function ccntest.SpatialCrossResponseNormalization_batch()
     local addScale = math.random()
     local powScale = math.random()
     local minDiv = math.random(1,2)
-    
+
     local tm = {}
     local title = string.format('ccn2.SpatialCrossResponseNormalization.forward %dx%dx%dx%d [s: %d]'
                                 , bs, fmaps, inj, ini, size, addScale, powScale, minDiv)
@@ -297,7 +300,7 @@ function ccntest.SpatialResponseNormalization_batch()
     local addScale = math.random()
     local powScale = math.random()
     local minDiv = math.random(1,2)
-    
+
     local tm = {}
     local title = string.format('ccn2.SpatialResponseNormalization.forward %dx%dx%dx%d [s: %d]'
                                 , bs, fmaps, inj, ini, size, addScale, powScale, minDiv)
@@ -339,7 +342,7 @@ function ccntest.SpatialCrossMaxPooling_batch()
     local ini = math.random(5,17)
     local inj = ini
     local kD = math.random(1,fmaps)
-    local dD = math.random(1,fmaps)
+    local dD = math.random(1,kD)
 
     local tm = {}
     local title = string.format('ccn2.SpatialCrossMaxPooling %dx%dx%dx%d [kD: %d dD: %d]'
