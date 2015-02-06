@@ -4,7 +4,7 @@ CMAKE_POLICY(VERSION 2.8)
 FIND_PACKAGE(Torch REQUIRED)
 FIND_PACKAGE(CUDA 5.5 REQUIRED)
 
-SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50 -O3 -lcublas -lcudart")
+SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50 -O3 -lcublas -lcudart")
 MESSAGE("NVCC FLAGS: " ${CUDA_NVCC_FLAGS})
 
 IF(APPLE)
