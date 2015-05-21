@@ -30,16 +30,18 @@ function ccntest.SpatialConvolution_forward_batch()
     times[title] = tm
 
     local input = torch.randn(from,inj,ini,bs):cuda()
-    local sconv = nn.SpatialConvolutionCUDA(from,to,ki,kj,si,sj):cuda()
-    local groundtruth = sconv:forward(input)
+    local sinput = input:permute(4, 1, 2, 3)
+    local sconv = nn.SpatialConvolution(from,to,ki,kj,si,sj):cuda()
+    local groundtruth = sconv:forward(sinput)
     local a = torch.Timer()
     for i = 1,nloop do
-       groundtruth = sconv:forward(input)
+       groundtruth = sconv:forward(sinput)
     end
+    groundtruth = groundtruth:permute(2, 3, 4, 1)
     tm.cpu = a:time().real
 
     local gconv = ccn2.SpatialConvolution(from,to,ki,si):cuda()
-    gconv.weight:copy(sconv.weight)
+    gconv.weight:copy(sconv.weight:permute(2, 3, 4, 1))
     gconv.bias:copy(sconv.bias)
     local rescuda = gconv:forward(input)
     a:reset()
@@ -80,22 +82,25 @@ function ccntest.SpatialConvolution_forward_batch()
     times[title] = tm
 
     local input = torch.randn(from,inj,ini,bs):cuda()
+    local sinput = input:permute(4, 1, 2, 3)
     local gradOutput = torch.randn(to,outj,outi,bs):cuda()
-    local sconv = nn.SpatialConvolutionCUDA(from,to,ki,kj,si,sj):cuda()
-    sconv:forward(input)
+    local sgradOutput = gradOutput:permute(4, 1, 2, 3)
+    local sconv = nn.SpatialConvolution(from,to,ki,kj,si,sj):cuda()
+    sconv:forward(sinput)
     sconv:zeroGradParameters()
-    local groundgrad = sconv:backward(input, gradOutput)
+    local groundgrad = sconv:backward(sinput, sgradOutput)
     local a = torch.Timer()
     for i = 1,nloop do
        sconv:zeroGradParameters()
-       groundgrad = sconv:backward(input, gradOutput, backwardScale)
+       groundgrad = sconv:backward(sinput, sgradOutput, backwardScale)
     end
-    local groundweight = sconv.gradWeight
+    groundgrad = groundgrad:permute(2, 3, 4, 1)
+    local groundweight = sconv.gradWeight:permute(2, 3, 4, 1)
     local groundbias = sconv.gradBias
     tm.cpu = a:time().real
 
     local gconv = ccn2.SpatialConvolution(from,to,ki,si, 0, 1, partialSum):cuda()
-    gconv.weight:copy(sconv.weight)
+    gconv.weight:copy(sconv.weight:permute(2, 3, 4, 1))
     gconv.bias:copy(sconv.bias)
     gconv:forward(input)
     gconv:zeroGradParameters()
@@ -134,13 +139,15 @@ function ccntest.SpatialMaxPooling_forward_batch()
   times[title] = tm
 
   local input = torch.randn(from,inj,ini,bs):cuda()
+  local sinput = input:permute(4, 1, 2, 3)
 
-  local spool = nn.SpatialMaxPoolingCUDA(kw, kw, dw, dw):cuda()
-  local groundtruth = spool:forward(input)
+  local spool = nn.SpatialMaxPooling(kw, kw, dw, dw):cuda()
+  local groundtruth = spool:forward(sinput)
   local a = torch.Timer()
   for i = 1,nloop do
-    groundtruth = spool:forward(input)
+    groundtruth = spool:forward(sinput)
   end
+  groundtruth = groundtruth:permute(2, 3, 4, 1)
   cutorch.synchronize()
   tm.cpu = a:time().real
 
@@ -183,15 +190,18 @@ function ccntest.SpatialMaxPooling_backward_batch()
   local gradOutput = torch.randn(bs,to,outj,outi)
   input = input:resize(bs,from*ini*inj):t():contiguous():resize(from,ini,inj,bs):cuda()
   gradOutput = gradOutput:resize(bs,to*outi*outj):t():contiguous():resize(to,outi,outj,bs):cuda()
-  local sconv = nn.SpatialMaxPoolingCUDA(ki,kj,si,sj):cuda()
-  sconv:forward(input)
+  local sinput = input:permute(4, 1, 2, 3)
+  local sgradOutput = gradOutput:permute(4, 1, 2, 3)
+  local sconv = nn.SpatialMaxPooling(ki,kj,si,sj):cuda()
+  sconv:forward(sinput)
   sconv:zeroGradParameters()
-  local groundgrad = sconv:backward(input, gradOutput)
+  local groundgrad = sconv:backward(sinput, sgradOutput)
   local a = torch.Timer()
   for i = 1,nloop do
     sconv:zeroGradParameters()
-    groundgrad = sconv:backward(input, gradOutput)
+    groundgrad = sconv:backward(sinput, sgradOutput)
   end
+  groundgrad = groundgrad:permute(2, 3, 4, 1)
   tm.cpu = a:time().real
 
   local gconv = ccn2.SpatialMaxPooling(ki, si):cuda()
