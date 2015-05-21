@@ -21,9 +21,6 @@
 #include <THC.h>
 
 #include <assert.h>
-#define THAssert(exp)  if (exp) ; \
-  else THError("assert(%s) failed in file %s, line %d", #exp, __FILE__, __LINE__);
-
 #include <helper_cuda.h>
 
 #ifndef DIVUP
@@ -321,27 +318,28 @@ void convPoolCrossMap(THCState* state, THCudaTensor* images, THCudaTensor* targe
 
     dim3 threads(32, 4);
     dim3 blocks(imgSize * DIVUP(numImages, threads.x * imgsPerThread), imgSize * DIVUP(numOutputs, threads.y));
+    cudaStream_t stream = THCState_getCurrentStream(state);
     bool checkCaseBounds = numImages % (threads.x*imgsPerThread) != 0;
     if (!checkCaseBounds) {
         if (imgsPerThread == 4) {
             cudaFuncSetCacheConfig(kPoolCrossMap<Pooler, 4, 32, 4, false>, cudaFuncCachePreferShared);
-            kPoolCrossMap<Pooler, 4, 32, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+            kPoolCrossMap<Pooler, 4, 32, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                               imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride, pooler);
 
         } else if (imgsPerThread == 2) {
             cudaFuncSetCacheConfig(kPoolCrossMap<Pooler, 4, 32, 2, false>, cudaFuncCachePreferShared);
-            kPoolCrossMap<Pooler, 4, 32, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+            kPoolCrossMap<Pooler, 4, 32, 2, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                               imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride, pooler);
 
         } else if (imgsPerThread == 1) {
             cudaFuncSetCacheConfig(kPoolCrossMap<Pooler, 4, 32, 1, false>, cudaFuncCachePreferShared);
-            kPoolCrossMap<Pooler, 4, 32, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+            kPoolCrossMap<Pooler, 4, 32, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                               imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride, pooler);
         }
     } else {
         if (imgsPerThread == 1) {
             cudaFuncSetCacheConfig(kPoolCrossMap<Pooler, 4, 32, 1, true>, cudaFuncCachePreferShared);
-            kPoolCrossMap<Pooler, 4, 32, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+            kPoolCrossMap<Pooler, 4, 32, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                               imgSize, numFilters, numImages, startF, poolSize, numOutputs, stride, pooler);
         } else {
             THAssert(false);
@@ -497,6 +495,7 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
 //    THAssert(numImages % 128 == 0);
     int outputs = outputsX * outputsX;
     THCudaTensor_resize2d(state, target, numFilters*outputs, numImages);
+    cudaStream_t stream = THCState_getCurrentStream(state);
 
     if (strideX == 1 && subsX >= 6) {
         // NOTE: this part has not been optimized for Kepler
@@ -514,41 +513,41 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
             if (filtersPerThread == 1) {
                  if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 1, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 1, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 2) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 2, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 2, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 2, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 2, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 3) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 3, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 3, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 3, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 3, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 3, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 3, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 4) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 4, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 4, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 8, 4, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 8, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 8, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             }
@@ -556,41 +555,41 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
             if (filtersPerThread == 1) {
                  if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 1, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 1, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 2) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 2, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 2, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 2, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 2, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 2, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 2, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 3) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 3, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 3, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 3, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 3, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 3, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 3, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             } else if (filtersPerThread == 4) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 4, true>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 4, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool2<Pooler, 8, 4, 4, false>, cudaFuncCachePreferShared);
-                    kLocalPool2<Pooler, 8, 4, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool2<Pooler, 8, 4, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, outputsX, pooler);
                 }
             }
@@ -605,21 +604,21 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
             if (filtersPerThread == 1) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 4, 1, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 4, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 4, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 4, 1, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 4, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 4, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             } else {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 4, 4, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 4, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 4, 4, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 4, 4, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 4, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 4, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             }
@@ -627,21 +626,21 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
             if (filtersPerThread == 1) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 2, 1, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 2, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 2, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 2, 1, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 2, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 2, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             } else {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 2, 4, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 2, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 2, 4, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 2, 4, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 2, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 2, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             }
@@ -649,21 +648,21 @@ void convLocalPool(THCState* state, THCudaTensor* images, THCudaTensor* target, 
             if (filtersPerThread == 1) {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 1, 1, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 1, 1, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 1, 1, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 1, 1, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 1, 1, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 1, 1, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             } else {
                 if (checkCaseBounds) {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 1, 4, true>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 1, 4, true><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 1, 4, true><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 } else {
                     cudaFuncSetCacheConfig(kLocalPool<Pooler, 4, 32, 1, 4, false>, cudaFuncCachePreferL1);
-                    kLocalPool<Pooler, 4, 32, 1, 4, false><<<blocks, threads, 0>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
+                    kLocalPool<Pooler, 4, 32, 1, 4, false><<<blocks, threads, 0, stream>>>(THCudaTensor_data(state, images), THCudaTensor_data(state, target),
                                                                       imgSize, numFilters, numImages, subsX, startX, strideX, outputsX, pooler);
                 }
             }
