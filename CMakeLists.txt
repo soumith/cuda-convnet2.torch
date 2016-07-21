@@ -2,9 +2,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
 CMAKE_POLICY(VERSION 2.8)
 
 FIND_PACKAGE(Torch REQUIRED)
-FIND_PACKAGE(CUDA 5.5 REQUIRED)
+FIND_PACKAGE(CUDA 7.5 REQUIRED)
 
-SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50 -O3 -lcublas -lcudart")
+IF(COMMAND CUDA_SELECT_NVCC_ARCH_FLAGS)
+# New CMake function, comes with FindCUDA
+  CUDA_SELECT_NVCC_ARCH_FLAGS(NVCC_FLAGS_EXTRA $ENV{TORCH_CUDA_ARCH_LIST})
+ELSE()
+
+  SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50 -O3 -lcublas -lcudart")
+ENDIF()
+
 MESSAGE("NVCC FLAGS: " ${CUDA_NVCC_FLAGS})
 
 IF(APPLE)
@@ -17,10 +24,10 @@ INCLUDE_DIRECTORIES("${Torch_INSTALL_INCLUDE}/TH" "${Torch_INSTALL_INCLUDE}/THC"
 
 LINK_DIRECTORIES("${Torch_INSTALL_LIB}")
 
-SET(src 
-  cudaconv3/src/conv_util.cu 
-  cudaconv3/src/filter_acts.cu 
-  cudaconv3/src/img_acts.cu 
+SET(src
+  cudaconv3/src/conv_util.cu
+  cudaconv3/src/filter_acts.cu
+  cudaconv3/src/img_acts.cu
   cudaconv3/src/weight_acts.cu
   bias_kernels.cu)
 
@@ -33,7 +40,7 @@ TARGET_LINK_LIBRARIES(ccn2 THC TH)
 SET_TARGET_PROPERTIES(ccn2 PROPERTIES
   PREFIX "lib"
   IMPORT_PREFIX "lib")
-    
+
 INSTALL(TARGETS ccn2
   RUNTIME DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}"
   LIBRARY DESTINATION "${Torch_INSTALL_LUA_CPATH_SUBDIR}")
