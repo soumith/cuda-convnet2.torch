@@ -8,7 +8,7 @@ IF(COMMAND CUDA_SELECT_NVCC_ARCH_FLAGS)
 # New CMake function, comes with FindCUDA
   CUDA_SELECT_NVCC_ARCH_FLAGS(NVCC_FLAGS_EXTRA $ENV{TORCH_CUDA_ARCH_LIST})
 ELSE()
-  SET(NVCC_FLAGS_EXTRA "${-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50")
+  SET(NVCC_FLAGS_EXTRA "-gencode=arch=compute_30,code=sm_30;-gencode=arch=compute_35,code=sm_35;-gencode=arch=compute_50,code=sm_50")
 ENDIF()
 
 SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};${NVCC_FLAGS_EXTRA};-O3 -lcublas -lcudart")
